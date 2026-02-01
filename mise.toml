@@ -1,0 +1,37 @@
+# cfgate mise configuration
+# Purpose: env/secrets + cluster tools (e2e test setup)
+# Build/test orchestration: use Makefile
+
+[env]
+_.file = ["secrets.enc.yaml", ".env"]
+
+# Default to using existing cluster for E2E
+E2E_USE_EXISTING_CLUSTER = "true"
+
+[tools]
+# Cluster management only - build tools handled by Makefile
+"aqua:kubernetes-sigs/kind" = "0.31.0"
+"aqua:kubernetes/kubernetes/kubectl" = "1.35.0"
+
+[tasks."e2e"]
+description = "Run e2e tests"
+run = "make test-e2e"
+
+#
+# Cluster Lifecycle (one-time setup, not per-test)
+#
+
+[tasks."cluster-create"]
+description = "Create dedicated cfgate test cluster (one-time)"
+run = """
+kind create cluster --name cfgate-test --wait 5m
+kubectl cluster-info --context kind-cfgate-test
+"""
+
+[tasks."cluster-delete"]
+description = "Delete cfgate test cluster only"
+run = "kind delete cluster --name cfgate-test"
+
+[tasks."cluster-status"]
+description = "Check cfgate test cluster status"
+run = "kind get clusters | grep cfgate-test && kubectl --context kind-cfgate-test get nodes || echo 'cfgate-test cluster not found'"
