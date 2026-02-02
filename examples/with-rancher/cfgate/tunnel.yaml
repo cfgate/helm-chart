@@ -7,7 +7,7 @@ spec:
   tunnel:
     name: rancher-tunnel
   cloudflare:
-    accountId: "${CLOUDFLARE_ACCOUNT_ID}"
+    accountId: "your-account-id"  # <-- Replace with your Cloudflare account ID
     secretRef:
       name: cloudflare-credentials
   cloudflared:

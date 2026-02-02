@@ -4,9 +4,110 @@ Kubernetes controller for Cloudflare Tunnel management using Gateway API.
 
 ## Features
 
-- **CloudflareTunnel**: Manages tunnel lifecycle, deploys cloudflared pods, syncs ingress configuration
-- **CloudflareDNSSync**: Watches HTTPRoutes and creates CNAME records pointing to tunnel
+- **CloudflareTunnel**: Manages tunnel lifecycle, deploys cloudflared pods
+- **CloudflareDNSSync**: Watches HTTPRoutes and creates CNAME records
 - **Gateway API**: Native GatewayClass/Gateway/HTTPRoute support
+
+## Install
+
+```bash
+# Gateway API CRDs
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+
+# cfgate controller
+kubectl apply -f https://github.com/inherent-design/cfgate/releases/latest/download/install.yaml
+```
+
+## Quick Start
+
+```bash
+# 1. Create credentials
+kubectl create secret generic cloudflare-credentials \
+  -n cfgate-system \
+  --from-literal=CLOUDFLARE_API_TOKEN=<token>
+
+# 2. Create tunnel
+cat <<EOF | kubectl apply -f -
+apiVersion: cfgate.io/v1alpha1
+kind: CloudflareTunnel
+metadata:
+  name: my-tunnel
+  namespace: cfgate-system
+spec:
+  tunnel:
+    name: my-tunnel
+  cloudflare:
+    accountId: "<account-id>"
+    secretRef:
+      name: cloudflare-credentials
+  cloudflared:
+    replicas: 2
+EOF
+
+# 3. Create gateway
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: cfgate
+spec:
+  controllerName: cfgate.io/cloudflare-tunnel-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cloudflare-tunnel
+  namespace: cfgate-system
+  annotations:
+    cfgate.io/tunnel-ref: cfgate-system/my-tunnel
+    cfgate.io/dns-sync: enabled
+spec:
+  gatewayClassName: cfgate
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+EOF
+
+# 4. Create DNS sync
+cat <<EOF | kubectl apply -f -
+apiVersion: cfgate.io/v1alpha1
+kind: CloudflareDNSSync
+metadata:
+  name: my-dns
+  namespace: cfgate-system
+spec:
+  tunnelRef:
+    name: my-tunnel
+  zones:
+    - name: example.com
+  source:
+    gatewayRoutes:
+      enabled: true
+EOF
+
+# 5. Expose a service
+cat <<EOF | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: my-app
+  namespace: default
+spec:
+  parentRefs:
+    - name: cloudflare-tunnel
+      namespace: cfgate-system
+  hostnames:
+    - app.example.com
+  rules:
+    - backendRefs:
+        - name: my-service
+          port: 80
+EOF
+```
 
 ## Requirements
 
@@ -19,43 +120,16 @@ API Token with permissions:
 
 ### Kubernetes
 
-- Gateway API CRDs installed
+- Gateway API v1.4.1+ CRDs
 - cluster-admin access
 
-## Install
-
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
-kubectl apply -f https://github.com/inherent-design/cfgate/releases/latest/download/install.yaml
-```
-
-Create credentials:
-
-```bash
-kubectl create secret generic cloudflare-credentials \
-  -n cfgate-system \
-  --from-literal=CLOUDFLARE_API_TOKEN=<token> \
-  --from-literal=CLOUDFLARE_ACCOUNT_ID=<account-id>
-```
-
-## Usage
-
-See [examples/](examples/) for complete configurations:
+## Examples
 
 | Example | Description |
 |---------|-------------|
-| [basic](examples/basic) | Tunnel + gateway + DNS sync |
+| [basic](examples/basic) | Single tunnel + gateway + DNS sync |
 | [multi-service](examples/multi-service) | Multiple services, one tunnel |
 | [with-rancher](examples/with-rancher) | Rancher 2.14+ integration |
-
-### Gateway Annotations
-
-```yaml
-metadata:
-  annotations:
-    cfgate.io/tunnel-ref: <namespace>/<tunnel-name>
-    cfgate.io/dns-sync: enabled
-```
 
 ## Development
 
@@ -73,15 +147,6 @@ mise tasks
 | `mise run build` | Build binary |
 | `mise run docker:build` | Build container image |
 | `mise run deploy` | Deploy to current cluster |
-
-### Local Testing
-
-```bash
-mise run cluster:create
-mise run deploy
-mise run test
-mise run cluster:delete
-```
 
 ## License
 

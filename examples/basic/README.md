@@ -1,58 +1,41 @@
 # Basic Example
 
-Minimal cfgate setup with a single tunnel exposing one service.
+Single tunnel exposing one service via Cloudflare.
 
-## Prerequisites
-
-- cfgate controller installed (`kubectl apply -k config/default`)
-- Gateway API CRDs installed
-- Cloudflare credentials
-
-## Setup
-
-1. **Create namespace and secret**
+## Quick Start
 
 ```bash
-kubectl create namespace demo
+# 1. Install Gateway API + cfgate
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+kubectl apply -f https://github.com/inherent-design/cfgate/releases/latest/download/install.yaml
+
+# 2. Create credentials
 kubectl create secret generic cloudflare-credentials \
   -n cfgate-system \
   --from-literal=CLOUDFLARE_API_TOKEN=<your-token>
-```
 
-2. **Edit configuration**
-
-Update `kustomization.yaml`:
-- Set `CLOUDFLARE_ACCOUNT_ID`
-- Set hostname in `httproute.yaml`
-
-3. **Apply**
-
-```bash
+# 3. Deploy example (edit files first)
 kubectl apply -k examples/basic
 ```
 
-4. **Verify**
+## Configuration
+
+Before applying, edit these files:
+
+| File | What to change |
+|------|----------------|
+| `tunnel.yaml` | Set `accountId` to your Cloudflare account ID |
+| `dnssync.yaml` | Set `zones[].name` to your domain |
+| `httproute.yaml` | Set `hostnames[]` to your subdomain |
+
+## Verify
 
 ```bash
-# Check tunnel status
 kubectl get cloudflaretunnel -n cfgate-system
-
-# Check DNS sync
-kubectl get cloudflarednssyncs -n cfgate-system -o wide
-
-# Check HTTPRoute
+kubectl get cloudflarednssyncs -n cfgate-system
 kubectl get httproute -n demo
+curl https://echo.yourdomain.com
 ```
-
-## Components
-
-| File | Purpose |
-|------|---------|
-| `tunnel.yaml` | Creates Cloudflare tunnel, deploys cloudflared pods |
-| `gateway.yaml` | GatewayClass + Gateway with tunnel reference |
-| `dnssync.yaml` | Syncs HTTPRoute hostnames to Cloudflare DNS |
-| `echo-service.yaml` | Demo echo server |
-| `httproute.yaml` | Routes `echo.example.com` to echo service |
 
 ## Cleanup
 

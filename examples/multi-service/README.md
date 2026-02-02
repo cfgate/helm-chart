@@ -2,23 +2,23 @@
 
 Multiple services exposed through a single Cloudflare tunnel.
 
-## Overview
-
 ```
-api.example.com    ──┐
-                     ├──▶ cloudflared ──▶ Cloudflare Edge
-web.example.com    ──┘
+api.example.com   ──┐
+                    ├──▶ cloudflared ──▶ Cloudflare Edge
+web.example.com   ──┘
 ```
 
-## Setup
-
-1. **Create namespace and credentials** (see [basic example](../basic))
-
-2. **Edit hostnames** in `httproutes.yaml`
-
-3. **Apply**
+## Quick Start
 
 ```bash
+# 1. Install cfgate (see basic example)
+
+# 2. Edit configuration files
+# - tunnel.yaml: set accountId
+# - dnssync.yaml: set zones[].name
+# - httproutes.yaml: set hostnames
+
+# 3. Deploy
 kubectl apply -k examples/multi-service
 ```
 
@@ -30,8 +30,14 @@ kubectl apply -k examples/multi-service
 - Two services: `api` and `web`
 - Two HTTPRoutes with different hostnames
 
-## Adding More Services
+## Adding Services
 
-1. Create deployment + service
-2. Add HTTPRoute referencing the shared Gateway
-3. DNS record is automatically created by CloudflareDNSSync
+1. Add deployment + service to `services.yaml`
+2. Add HTTPRoute to `httproutes.yaml`
+3. DNS record created automatically
+
+## Cleanup
+
+```bash
+kubectl delete -k examples/multi-service
+```

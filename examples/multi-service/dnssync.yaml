@@ -7,9 +7,18 @@ spec:
   tunnelRef:
     name: multi-tunnel
   zones:
-    - name: example.com
+    - name: example.com  # <-- Replace with your domain
   source:
     gatewayRoutes:
       enabled: true
   defaults:
     proxied: true
+    ttl: auto
+  ownership:
+    txtRecord:
+      enabled: true
+      prefix: _cfgate
+  cleanupPolicy:
+    deleteOnRouteRemoval: true
+    deleteOnResourceRemoval: true
+    onlyManaged: true

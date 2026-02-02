@@ -7,7 +7,7 @@ spec:
   tunnelRef:
     name: demo-tunnel
   zones:
-    - name: example.com  # Replace with your domain
+    - name: example.com  # <-- Replace with your domain
   source:
     gatewayRoutes:
       enabled: true
