@@ -530,7 +530,7 @@ func startController() {
 	tunnelReconciler := &controller.CloudflareTunnelReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("cloudflaretunnel-controller"),
+		Recorder: mgr.GetEventRecorder("cloudflaretunnel-controller"),
 		Builder:  cloudflared.NewBuilder(),
 	}
 	Expect(tunnelReconciler.SetupWithManager(mgr)).To(Succeed(), "Failed to setup tunnel controller")
@@ -539,7 +539,7 @@ func startController() {
 	dnsReconciler := &controller.CloudflareDNSSyncReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("cloudflarednsync-controller"),
+		Recorder: mgr.GetEventRecorder("cloudflarednsync-controller"),
 	}
 	Expect(dnsReconciler.SetupWithManager(mgr)).To(Succeed(), "Failed to setup DNS controller")
 

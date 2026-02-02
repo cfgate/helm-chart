@@ -11,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,7 +24,7 @@ import (
 type HTTPRouteReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch
@@ -117,7 +117,7 @@ func (r *HTTPRouteReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	r.Recorder.Event(&route, corev1.EventTypeNormal, "Reconciled", "HTTPRoute reconciled successfully")
+	r.Recorder.Eventf(&route, nil, corev1.EventTypeNormal, "Reconciled", "Reconcile", "HTTPRoute reconciled successfully")
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 

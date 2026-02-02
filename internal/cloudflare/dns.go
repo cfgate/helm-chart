@@ -117,10 +117,32 @@ func (s *DNSService) ListManagedRecords(ctx context.Context, zoneID, ownershipPr
 	return managed, nil
 }
 
-// CreateOwnershipRecord creates a TXT record for ownership tracking.
+// CreateOwnershipRecord creates or updates a TXT record for ownership tracking.
+// Uses upsert pattern: checks if record exists before creating to avoid duplicate errors.
 func (s *DNSService) CreateOwnershipRecord(ctx context.Context, zoneID, hostname, tunnelName string, prefix string) error {
 	record := BuildOwnershipTXTRecord(hostname, tunnelName, prefix)
-	_, err := s.client.CreateDNSRecord(ctx, zoneID, record)
+
+	// Check if ownership record already exists
+	existing, err := s.FindRecordByName(ctx, zoneID, record.Name, record.Type)
+	if err != nil {
+		return fmt.Errorf("failed to check existing ownership record: %w", err)
+	}
+
+	if existing != nil {
+		// Record exists - check if update needed
+		if existing.Content == record.Content && existing.Comment == record.Comment {
+			return nil // Already up to date
+		}
+		// Update existing record
+		_, err := s.client.UpdateDNSRecord(ctx, zoneID, existing.ID, record)
+		if err != nil {
+			return fmt.Errorf("failed to update ownership record: %w", err)
+		}
+		return nil
+	}
+
+	// Create new record
+	_, err = s.client.CreateDNSRecord(ctx, zoneID, record)
 	if err != nil {
 		return fmt.Errorf("failed to create ownership record: %w", err)
 	}

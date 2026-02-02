@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,7 +56,7 @@ const (
 type CloudflareTunnelReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 
 	// CFClient is the Cloudflare API client. Injected for testing.
 	CFClient cloudflare.Client
@@ -77,6 +77,7 @@ type CloudflareTunnelReconciler struct {
 // +kubebuilder:rbac:groups="",resources=secrets;configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=events.k8s.io,resources=events,verbs=create;patch
 // +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile handles the reconciliation loop for CloudflareTunnel resources.
@@ -118,7 +119,7 @@ func (r *CloudflareTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err := r.updateStatus(ctx, &tunnel); err != nil {
 			log.Error(err, "failed to update status")
 		}
-		r.Recorder.Event(&tunnel, corev1.EventTypeWarning, "CredentialsInvalid", err.Error())
+		r.Recorder.Eventf(&tunnel, nil, corev1.EventTypeWarning, "CredentialsInvalid", "Validate", "%s", err.Error())
 		return ctrl.Result{RequeueAfter: requeueAfterError}, nil
 	}
 	r.setCondition(&tunnel, ConditionTypeCredentialsValid, metav1.ConditionTrue, "CredentialsValid", "API token validated successfully")
@@ -130,7 +131,7 @@ func (r *CloudflareTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err := r.updateStatus(ctx, &tunnel); err != nil {
 			log.Error(err, "failed to update status")
 		}
-		r.Recorder.Event(&tunnel, corev1.EventTypeWarning, "TunnelError", err.Error())
+		r.Recorder.Eventf(&tunnel, nil, corev1.EventTypeWarning, "TunnelError", "Reconcile", "%s", err.Error())
 		return ctrl.Result{RequeueAfter: requeueAfterError}, nil
 	}
 
@@ -141,7 +142,7 @@ func (r *CloudflareTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err := r.updateStatus(ctx, &tunnel); err != nil {
 			log.Error(err, "failed to update status")
 		}
-		r.Recorder.Event(&tunnel, corev1.EventTypeWarning, "DeploymentError", err.Error())
+		r.Recorder.Eventf(&tunnel, nil, corev1.EventTypeWarning, "DeploymentError", "Deploy", "%s", err.Error())
 		return ctrl.Result{RequeueAfter: requeueAfterError}, nil
 	}
 
@@ -152,7 +153,7 @@ func (r *CloudflareTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err := r.updateStatus(ctx, &tunnel); err != nil {
 			log.Error(err, "failed to update status")
 		}
-		r.Recorder.Event(&tunnel, corev1.EventTypeWarning, "ConfigSyncError", err.Error())
+		r.Recorder.Eventf(&tunnel, nil, corev1.EventTypeWarning, "ConfigSyncError", "Sync", "%s", err.Error())
 		return ctrl.Result{RequeueAfter: requeueAfterError}, nil
 	}
 	r.setCondition(&tunnel, ConditionTypeTunnelConfigured, metav1.ConditionTrue, "ConfigurationSynced", "Tunnel configuration synced to Cloudflare")
@@ -168,7 +169,7 @@ func (r *CloudflareTunnelReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{RequeueAfter: requeueAfterError}, nil
 	}
 
-	r.Recorder.Event(&tunnel, corev1.EventTypeNormal, "Reconciled", "Tunnel reconciled successfully")
+	r.Recorder.Eventf(&tunnel, nil, corev1.EventTypeNormal, "Reconciled", "Reconcile", "Tunnel reconciled successfully")
 	return ctrl.Result{RequeueAfter: requeueAfterSuccess}, nil
 }
 
@@ -315,10 +316,10 @@ func (r *CloudflareTunnelReconciler) ensureTunnel(ctx context.Context, tunnel *c
 
 	if created {
 		log.Info("Created new tunnel", "tunnelID", cfTunnel.ID, "tunnelName", cfTunnel.Name)
-		r.Recorder.Event(tunnel, corev1.EventTypeNormal, "TunnelCreated", fmt.Sprintf("Created tunnel %s (ID: %s)", cfTunnel.Name, cfTunnel.ID))
+		r.Recorder.Eventf(tunnel, nil, corev1.EventTypeNormal, "TunnelCreated", "Create", "Created tunnel %s (ID: %s)", cfTunnel.Name, cfTunnel.ID)
 	} else {
 		log.Info("Adopted existing tunnel", "tunnelID", cfTunnel.ID, "tunnelName", cfTunnel.Name)
-		r.Recorder.Event(tunnel, corev1.EventTypeNormal, "TunnelAdopted", fmt.Sprintf("Adopted existing tunnel %s (ID: %s)", cfTunnel.Name, cfTunnel.ID))
+		r.Recorder.Eventf(tunnel, nil, corev1.EventTypeNormal, "TunnelAdopted", "Adopt", "Adopted existing tunnel %s (ID: %s)", cfTunnel.Name, cfTunnel.ID)
 	}
 
 	return nil
@@ -392,7 +393,7 @@ func (r *CloudflareTunnelReconciler) deployCloudflared(ctx context.Context, tunn
 				return fmt.Errorf("failed to create deployment: %w", err)
 			}
 			log.Info("Created cloudflared deployment", "name", deployment.Name)
-			r.Recorder.Event(tunnel, corev1.EventTypeNormal, "DeploymentCreated", fmt.Sprintf("Created cloudflared deployment %s", deployment.Name))
+			r.Recorder.Eventf(tunnel, nil, corev1.EventTypeNormal, "DeploymentCreated", "Create", "Created cloudflared deployment %s", deployment.Name)
 		} else {
 			return fmt.Errorf("failed to get deployment: %w", err)
 		}
@@ -602,15 +603,15 @@ func (r *CloudflareTunnelReconciler) reconcileDelete(ctx context.Context, tunnel
 	deletionPolicy := tunnel.Annotations["cfgate.io/deletion-policy"]
 	if deletionPolicy == "orphan" {
 		log.Info("Orphaning tunnel due to deletion policy", "tunnelID", tunnel.Status.TunnelID)
-		r.Recorder.Event(tunnel, corev1.EventTypeNormal, "TunnelOrphaned", fmt.Sprintf("Tunnel %s orphaned due to deletion policy", tunnel.Status.TunnelID))
+		r.Recorder.Eventf(tunnel, nil, corev1.EventTypeNormal, "TunnelOrphaned", "Delete", "Tunnel %s orphaned due to deletion policy", tunnel.Status.TunnelID)
 	} else if tunnel.Status.TunnelID != "" {
 		// Try to delete tunnel from Cloudflare
 		cfClient, err := r.getCloudflareClientForDeletion(ctx, tunnel)
 		if err != nil {
 			// Could not get credentials from either primary or fallback
 			log.Error(err, "failed to create Cloudflare client for deletion, tunnel may be orphaned on Cloudflare")
-			r.Recorder.Event(tunnel, corev1.EventTypeWarning, "TunnelOrphanedNoCredentials",
-				fmt.Sprintf("Tunnel %s may be orphaned on Cloudflare: %v", tunnel.Status.TunnelID, err))
+			r.Recorder.Eventf(tunnel, nil, corev1.EventTypeWarning, "TunnelOrphanedNoCredentials", "Delete",
+				"Tunnel %s may be orphaned on Cloudflare: %v", tunnel.Status.TunnelID, err)
 			// Continue with finalizer removal - don't block deletion
 		} else {
 			tunnelService := cloudflare.NewTunnelService(cfClient)
@@ -618,11 +619,11 @@ func (r *CloudflareTunnelReconciler) reconcileDelete(ctx context.Context, tunnel
 
 			if err := tunnelService.Delete(ctx, accountID, tunnel.Status.TunnelID); err != nil {
 				log.Error(err, "failed to delete tunnel from Cloudflare")
-				r.Recorder.Event(tunnel, corev1.EventTypeWarning, "TunnelDeleteError", err.Error())
+				r.Recorder.Eventf(tunnel, nil, corev1.EventTypeWarning, "TunnelDeleteError", "Delete", "%s", err.Error())
 				// Continue with finalizer removal
 			} else {
 				log.Info("Deleted tunnel from Cloudflare", "tunnelID", tunnel.Status.TunnelID)
-				r.Recorder.Event(tunnel, corev1.EventTypeNormal, "TunnelDeleted", fmt.Sprintf("Deleted tunnel %s from Cloudflare", tunnel.Status.TunnelID))
+				r.Recorder.Eventf(tunnel, nil, corev1.EventTypeNormal, "TunnelDeleted", "Delete", "Deleted tunnel %s from Cloudflare", tunnel.Status.TunnelID)
 			}
 		}
 	}

@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -38,7 +38,7 @@ const (
 type GatewayReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways,verbs=get;list;watch
@@ -91,7 +91,7 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.Status().Update(ctx, &gateway); err != nil {
 			log.Error(err, "failed to update gateway status")
 		}
-		r.Recorder.Event(&gateway, corev1.EventTypeWarning, "TunnelNotFound", err.Error())
+		r.Recorder.Eventf(&gateway, nil, corev1.EventTypeWarning, "TunnelNotFound", "Validate", "%s", err.Error())
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -101,7 +101,7 @@ func (r *GatewayReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	r.Recorder.Event(&gateway, corev1.EventTypeNormal, "Reconciled", "Gateway reconciled successfully")
+	r.Recorder.Eventf(&gateway, nil, corev1.EventTypeNormal, "Reconciled", "Reconcile", "Gateway reconciled successfully")
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 

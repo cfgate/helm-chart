@@ -4,6 +4,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -12,12 +13,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gateway "sigs.k8s.io/gateway-api/apis/v1"
 
@@ -45,7 +48,7 @@ const (
 type CloudflareDNSSyncReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 
 	// CFClient is the Cloudflare API client. Injected for testing.
 	CFClient cloudflare.Client
@@ -135,7 +138,7 @@ func (r *CloudflareDNSSyncReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if err := r.updateStatus(ctx, &sync); err != nil {
 			log.Error(err, "failed to update status")
 		}
-		r.Recorder.Event(&sync, corev1.EventTypeWarning, "SyncFailed", err.Error())
+		r.Recorder.Eventf(&sync, nil, corev1.EventTypeWarning, "SyncFailed", "Sync", "%s", err.Error())
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 	r.setCondition(&sync, ConditionTypeDNSSynced, metav1.ConditionTrue, "RecordsSynced", "DNS records synced successfully")
@@ -151,16 +154,28 @@ func (r *CloudflareDNSSyncReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	r.Recorder.Event(&sync, corev1.EventTypeNormal, "Reconciled", "DNS sync completed successfully")
+	r.Recorder.Eventf(&sync, nil, corev1.EventTypeNormal, "Reconciled", "Reconcile", "DNS sync completed successfully")
 	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
+// Uses GenerationChangedPredicate to avoid reconciling on status-only updates,
+// which prevents the 1-second reconciliation loop caused by status updates.
 func (r *CloudflareDNSSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&cfgatev1alpha1.CloudflareDNSSync{}).
-		Watches(&gateway.HTTPRoute{}, handler.EnqueueRequestsFromMapFunc(r.findAffectedDNSSyncs)).
-		Watches(&gateway.Gateway{}, handler.EnqueueRequestsFromMapFunc(r.findAffectedDNSSyncs)).
+		For(&cfgatev1alpha1.CloudflareDNSSync{},
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
+		Watches(
+			&gateway.HTTPRoute{},
+			handler.EnqueueRequestsFromMapFunc(r.findAffectedDNSSyncs),
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
+		Watches(
+			&gateway.Gateway{},
+			handler.EnqueueRequestsFromMapFunc(r.findAffectedDNSSyncs),
+			builder.WithPredicates(predicate.GenerationChangedPredicate{}),
+		).
 		Complete(r)
 }
 
@@ -398,15 +413,15 @@ func (r *CloudflareDNSSyncReconciler) syncRecords(ctx context.Context, sync *cfg
 		// Create ownership TXT record if enabled
 		if sync.Spec.Ownership.TXTRecord.Enabled {
 			if err := dnsService.CreateOwnershipRecord(ctx, zoneID, hostname, tunnel.Name, ownershipPrefix); err != nil {
-				log.Error(err, "failed to create ownership record", "hostname", hostname)
-				// Don't fail the sync for ownership record errors
+				// Non-fatal: ownership records are supplementary, don't fail sync
+				log.V(1).Info("ownership record sync issue", "hostname", hostname, "error", err.Error())
 			}
 		}
 
 		status := "Synced"
 		if modified {
 			log.Info("DNS record modified", "hostname", hostname, "recordID", record.ID)
-			r.Recorder.Event(sync, corev1.EventTypeNormal, "RecordSynced", fmt.Sprintf("DNS record synced: %s", hostname))
+			r.Recorder.Eventf(sync, nil, corev1.EventTypeNormal, "RecordSynced", "Sync", "DNS record synced: %s", hostname)
 		}
 
 		recordStatuses = append(recordStatuses, cfgatev1alpha1.DNSRecordStatus{
@@ -441,7 +456,7 @@ func (r *CloudflareDNSSyncReconciler) syncRecords(ctx context.Context, sync *cfg
 						log.Error(err, "failed to delete orphaned DNS record", "hostname", prevRecord.Hostname)
 					} else {
 						log.Info("Deleted orphaned DNS record", "hostname", prevRecord.Hostname)
-						r.Recorder.Event(sync, corev1.EventTypeNormal, "RecordDeleted", fmt.Sprintf("DNS record deleted: %s", prevRecord.Hostname))
+						r.Recorder.Eventf(sync, nil, corev1.EventTypeNormal, "RecordDeleted", "Delete", "DNS record deleted: %s", prevRecord.Hostname)
 					}
 
 					// Delete ownership TXT record if enabled
@@ -478,8 +493,8 @@ func (r *CloudflareDNSSyncReconciler) reconcileDelete(ctx context.Context, sync 
 	if sync.Spec.CleanupPolicy.DeleteOnResourceRemoval {
 		if err := r.cleanupRecordsWithFallback(ctx, sync); err != nil {
 			log.Error(err, "failed to cleanup DNS records, records may be orphaned")
-			r.Recorder.Event(sync, corev1.EventTypeWarning, "DNSCleanupFailed",
-				fmt.Sprintf("DNS cleanup failed, records may be orphaned: %v", err))
+			r.Recorder.Eventf(sync, nil, corev1.EventTypeWarning, "DNSCleanupFailed", "Cleanup",
+				"DNS cleanup failed, records may be orphaned: %v", err)
 			// Continue with finalizer removal - don't block deletion
 		}
 	}
@@ -494,12 +509,18 @@ func (r *CloudflareDNSSyncReconciler) reconcileDelete(ctx context.Context, sync 
 	return ctrl.Result{}, nil
 }
 
-// updateStatus updates the CloudflareDNSSync status.
+// updateStatus updates the CloudflareDNSSync status only if it has changed.
+// This avoids unnecessary API calls and prevents watch events from status-only updates.
 func (r *CloudflareDNSSyncReconciler) updateStatus(ctx context.Context, sync *cfgatev1alpha1.CloudflareDNSSync) error {
 	// Re-fetch to avoid conflicts
 	var current cfgatev1alpha1.CloudflareDNSSync
 	if err := r.Get(ctx, types.NamespacedName{Name: sync.Name, Namespace: sync.Namespace}, &current); err != nil {
 		return fmt.Errorf("failed to re-fetch DNSSync: %w", err)
+	}
+
+	// Check if status actually changed (excluding LastSyncTime which always changes)
+	if statusEqual(&current.Status, &sync.Status) {
+		return nil // No update needed
 	}
 
 	// Copy status
@@ -510,6 +531,42 @@ func (r *CloudflareDNSSyncReconciler) updateStatus(ctx context.Context, sync *cf
 	}
 
 	return nil
+}
+
+// statusEqual compares two DNSSync statuses for equality.
+// Ignores LastSyncTime as it changes on every reconciliation.
+func statusEqual(a, b *cfgatev1alpha1.CloudflareDNSSyncStatus) bool {
+	// Compare generation
+	if a.ObservedGeneration != b.ObservedGeneration {
+		return false
+	}
+
+	// Compare record counts
+	if a.SyncedRecords != b.SyncedRecords ||
+		a.PendingRecords != b.PendingRecords ||
+		a.FailedRecords != b.FailedRecords {
+		return false
+	}
+
+	// Compare conditions (ignoring LastTransitionTime)
+	if len(a.Conditions) != len(b.Conditions) {
+		return false
+	}
+	for i := range a.Conditions {
+		if a.Conditions[i].Type != b.Conditions[i].Type ||
+			a.Conditions[i].Status != b.Conditions[i].Status ||
+			a.Conditions[i].Reason != b.Conditions[i].Reason ||
+			a.Conditions[i].Message != b.Conditions[i].Message {
+			return false
+		}
+	}
+
+	// Compare records
+	if !reflect.DeepEqual(a.Records, b.Records) {
+		return false
+	}
+
+	return true
 }
 
 // getCloudflareClient creates or returns the Cloudflare client.
