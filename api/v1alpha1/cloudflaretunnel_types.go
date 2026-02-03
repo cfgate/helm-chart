@@ -158,6 +158,82 @@ type CAPoolSecretRef struct {
 	Key string `json:"key,omitempty"`
 }
 
+// DNSPolicy defines the DNS record lifecycle policy.
+// +kubebuilder:validation:Enum=sync;upsert-only;create-only
+type DNSPolicy string
+
+const (
+	// DNSPolicySync creates, updates, and deletes records (default).
+	DNSPolicySync DNSPolicy = "sync"
+	// DNSPolicyUpsertOnly creates and updates only, never deletes.
+	DNSPolicyUpsertOnly DNSPolicy = "upsert-only"
+	// DNSPolicyCreateOnly creates only, never updates or deletes.
+	DNSPolicyCreateOnly DNSPolicy = "create-only"
+)
+
+// TunnelDNSConfig defines DNS sync configuration for the tunnel.
+// +kubebuilder:validation:XValidation:rule="!self.enabled || size(self.zones) > 0",message="zones must be specified when dns is enabled"
+type TunnelDNSConfig struct {
+	// Enabled enables DNS sync for this tunnel.
+	// +kubebuilder:default=false
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Policy is the DNS sync policy controlling record lifecycle.
+	// +kubebuilder:default=sync
+	Policy DNSPolicy `json:"policy,omitempty"`
+
+	// Zones is the list of DNS zones to manage.
+	// Required when enabled is true.
+	// +optional
+	Zones []TunnelZoneConfig `json:"zones,omitempty"`
+
+	// Ownership configures ownership tracking for DNS records.
+	// +optional
+	Ownership *TunnelOwnershipConfig `json:"ownership,omitempty"`
+
+	// CleanupPolicy configures record cleanup behavior.
+	// +optional
+	CleanupPolicy *TunnelCleanupPolicy `json:"cleanupPolicy,omitempty"`
+}
+
+// TunnelZoneConfig defines a DNS zone configuration for tunnel DNS sync.
+type TunnelZoneConfig struct {
+	// Name is the zone name (e.g., example.com).
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
+	Name string `json:"name"`
+
+	// ProxiedDefault is the default proxied setting for records in this zone.
+	// If nil, the proxied setting is determined per-record.
+	// +optional
+	ProxiedDefault *bool `json:"proxiedDefault,omitempty"`
+}
+
+// TunnelOwnershipConfig configures ownership tracking for DNS records.
+type TunnelOwnershipConfig struct {
+	// TXTRecord configures TXT record ownership tracking.
+	// +optional
+	TXTRecord *TunnelTXTRecordConfig `json:"txtRecord,omitempty"`
+}
+
+// TunnelTXTRecordConfig configures TXT record ownership tracking.
+type TunnelTXTRecordConfig struct {
+	// Enabled enables TXT ownership records.
+	// +kubebuilder:default=true
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Prefix is the TXT record name prefix.
+	// +kubebuilder:default="_cfgate"
+	Prefix string `json:"prefix,omitempty"`
+}
+
+// TunnelCleanupPolicy configures DNS record cleanup behavior for tunnel DNS sync.
+type TunnelCleanupPolicy struct {
+	// DeleteOnResourceRemoval enables deletion of DNS records when the source resource is removed.
+	// +kubebuilder:default=true
+	DeleteOnResourceRemoval bool `json:"deleteOnResourceRemoval,omitempty"`
+}
+
 // CloudflareTunnelSpec defines the desired state of CloudflareTunnel.
 type CloudflareTunnelSpec struct {
 	// Tunnel defines the tunnel identity configuration.
@@ -186,6 +262,12 @@ type CloudflareTunnelSpec struct {
 	// The secret must contain the same keys as the primary credentials secret.
 	// +optional
 	FallbackCredentialsRef *SecretReference `json:"fallbackCredentialsRef,omitempty"`
+
+	// DNS configures DNS sync for this tunnel.
+	// When enabled, the controller automatically creates CNAME records
+	// pointing hostnames from HTTPRoutes to the tunnel domain.
+	// +optional
+	DNS *TunnelDNSConfig `json:"dns,omitempty"`
 }
 
 // CloudflareTunnelStatus defines the observed state of CloudflareTunnel.
@@ -217,6 +299,13 @@ type CloudflareTunnelStatus struct {
 
 	// ConnectedRouteCount is the number of routes connected to this tunnel.
 	ConnectedRouteCount int32 `json:"connectedRouteCount,omitempty"`
+
+	// DNSRecordCount is the number of DNS records managed by this tunnel.
+	DNSRecordCount int32 `json:"dnsRecordCount,omitempty"`
+
+	// LastDNSSyncTime is the last time DNS records were synced to Cloudflare.
+	// +optional
+	LastDNSSyncTime *metav1.Time `json:"lastDNSSyncTime,omitempty"`
 
 	// Conditions represent the latest available observations of the tunnel's state.
 	// +patchMergeKey=type

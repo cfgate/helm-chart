@@ -48,6 +48,7 @@ rules:
 - apiGroups:
   - cfgate.io
   resources:
+  - cloudflareaccespolicies
   - cloudflarednssyncs
   - cloudflaretunnels
   verbs:
@@ -61,6 +62,7 @@ rules:
 - apiGroups:
   - cfgate.io
   resources:
+  - cloudflareaccespolicies/finalizers
   - cloudflarednssyncs/finalizers
   - cloudflaretunnels/finalizers
   verbs:
@@ -68,6 +70,7 @@ rules:
 - apiGroups:
   - cfgate.io
   resources:
+  - cloudflareaccespolicies/status
   - cloudflarednssyncs/status
   - cloudflaretunnels/status
   verbs:
@@ -91,7 +94,9 @@ rules:
   resources:
   - gatewayclasses
   - gateways
+  - grpcroutes
   - httproutes
+  - referencegrants
   - tcproutes
   - udproutes
   verbs:

@@ -258,6 +258,75 @@ spec:
                       type: object
                     type: array
                 type: object
+              dns:
+                description: |-
+                  DNS configures DNS sync for this tunnel.
+                  When enabled, the controller automatically creates CNAME records
+                  pointing hostnames from HTTPRoutes to the tunnel domain.
+                properties:
+                  cleanupPolicy:
+                    description: CleanupPolicy configures record cleanup behavior.
+                    properties:
+                      deleteOnResourceRemoval:
+                        default: true
+                        description: DeleteOnResourceRemoval enables deletion of DNS
+                          records when the source resource is removed.
+                        type: boolean
+                    type: object
+                  enabled:
+                    default: false
+                    description: Enabled enables DNS sync for this tunnel.
+                    type: boolean
+                  ownership:
+                    description: Ownership configures ownership tracking for DNS records.
+                    properties:
+                      txtRecord:
+                        description: TXTRecord configures TXT record ownership tracking.
+                        properties:
+                          enabled:
+                            default: true
+                            description: Enabled enables TXT ownership records.
+                            type: boolean
+                          prefix:
+                            default: _cfgate
+                            description: Prefix is the TXT record name prefix.
+                            type: string
+                        type: object
+                    type: object
+                  policy:
+                    default: sync
+                    description: Policy is the DNS sync policy controlling record
+                      lifecycle.
+                    enum:
+                    - sync
+                    - upsert-only
+                    - create-only
+                    type: string
+                  zones:
+                    description: |-
+                      Zones is the list of DNS zones to manage.
+                      Required when enabled is true.
+                    items:
+                      description: TunnelZoneConfig defines a DNS zone configuration
+                        for tunnel DNS sync.
+                      properties:
+                        name:
+                          description: Name is the zone name (e.g., example.com).
+                          minLength: 1
+                          type: string
+                        proxiedDefault:
+                          description: |-
+                            ProxiedDefault is the default proxied setting for records in this zone.
+                            If nil, the proxied setting is determined per-record.
+                          type: boolean
+                      required:
+                      - name
+                      type: object
+                    type: array
+                type: object
+                x-kubernetes-validations:
+                - message: zones must be specified when dns is enabled
+                  rule: '!self.enabled || size(self.zones) > 0'
               fallbackCredentialsRef:
                 description: |-
                   FallbackCredentialsRef references a secret containing fallback Cloudflare API credentials.
@@ -401,6 +470,16 @@ spec:
                   to this tunnel.
                 format: int32
                 type: integer
+              dnsRecordCount:
+                description: DNSRecordCount is the number of DNS records managed by
+                  this tunnel.
+                format: int32
+                type: integer
+              lastDNSSyncTime:
+                description: LastDNSSyncTime is the last time DNS records were synced
+                  to Cloudflare.
+                format: date-time
+                type: string
               lastSyncTime:
                 description: LastSyncTime is the last time the configuration was synced
                   to Cloudflare.
