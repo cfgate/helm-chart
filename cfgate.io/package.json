@@ -1,0 +1,37 @@
+{
+  "name": "cfgate-infra",
+  "version": "0.1.0",
+  "description": "https://cfgate.io",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
+    "deploy": "wrangler deploy",
+    "deploy:prod": "wrangler deploy --env production",
+    "deploy:staging": "wrangler deploy --env staging",
+    "format": "prettier --write .",
+    "lint": "eslint --fix",
+    "types": "wrangler types",
+    "typecheck": "pnpm types && tsc --noEmit",
+    "tail": "wrangler tail",
+    "tail:prod": "wrangler tail --env production"
+  },
+  "author": "inherent.design",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@10.28.2",
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.12.9",
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^25.2.0",
+    "@vitest/runner": "^3.2.4",
+    "@vitest/snapshot": "^3.2.4",
+    "eslint": "^9.39.2",
+    "jiti": "^2.6.1",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.62.0"
+  }
+}
