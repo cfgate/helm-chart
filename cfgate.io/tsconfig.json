@@ -12,14 +12,12 @@
       "ESNext.Iterator",
       "ESNext.Promise"
     ],
-    // Types - use wrangler-generated types
-    "types": [
-      "./worker-configuration.d.ts",
-      "node"
-    ],
+    // Types
+    "types": ["@cloudflare/vitest-pool-workers", "node"],
     // Strict mode
     "strict": true,
     "noEmit": true,
+    "declaration": true,
     "skipLibCheck": true,
     // Module interop
     "isolatedModules": true,
@@ -29,11 +27,6 @@
     // Additional features
     "resolveJsonModule": true
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "docs"]
 }
