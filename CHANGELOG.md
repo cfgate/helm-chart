@@ -5,9 +5,25 @@ All notable changes to cfgate are documented in this file.
 
 ## [Unreleased]
 
+### Bug Fixes
+
+- **(controller)** Register v1beta1 scheme, sync AccessPolicy CRD, demote noisy log
+
+## [0.1.0-alpha.7] - 2026-02-09
+
+### Features
+
+- **(controller)** Alpha.7 reconciler stabilization and HTTPRoute credential inheritance
+
 ### Documentation
 
 - Add shields.io badges to README
+- Fix CRD table, add credential resolution and troubleshooting
+
+### Maintenance
+
+- Update changelog for alpha.6 and fix badge layout
+- **(chart)** Bump to v1.0.3 / appVersion 0.1.0-alpha.7
 
 ## [0.1.0-alpha.6] - 2026-02-08
 
