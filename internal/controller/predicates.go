@@ -20,7 +20,7 @@ var predicateLog = ctrl.Log.WithName("predicate")
 //  2. Any cfgate.io/* annotation changed (value added, removed, or modified)
 //
 // This replaces GenerationChangedPredicate on cross-resource watchers where
-// cfgate annotations (cfgate.io/tunnel-ref, cfgate.io/dns-sync, etc.) are
+// cfgate annotations (cfgate.io/tunnel-ref, cfgate.io/origin-protocol, etc.) are
 // meaningful triggers that don't increment generation.
 //
 // For CRDs with status subresource, annotation-only changes do NOT increment

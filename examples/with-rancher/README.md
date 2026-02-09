@@ -29,13 +29,14 @@ helm upgrade --install rancher rancher-alpha/rancher \
 
 ### 3. Annotate Rancher's Gateway
 
-Rancher creates its own Gateway. Add cfgate annotations:
+Rancher creates its own Gateway. Add the tunnel reference so cfgate can route traffic through the Cloudflare Tunnel:
 
 ```bash
 kubectl annotate gateway rancher-gateway -n cattle-system \
-  cfgate.io/tunnel-ref=cfgate-system/rancher-tunnel \
-  cfgate.io/dns-sync=enabled
+  cfgate.io/tunnel-ref=cfgate-system/rancher-tunnel
 ```
+
+The CloudflareDNS resource discovers hostnames from all HTTPRoutes attached to this Gateway (via `gatewayRoutes.enabled: true`). No per-route annotations are needed unless you use `annotationFilter` to limit which routes get DNS records.
 
 ### 4. Verify
 

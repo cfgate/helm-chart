@@ -332,13 +332,13 @@ See the [Kiali CR Reference](https://kiali.io/docs/configuration/kialis.kiali.io
 2. Verify `status.conditions` — look for `Synced: True`
 3. If using `gatewayRoutes.enabled: true`, ensure the Gateway has a `cfgate.io/tunnel-ref` annotation and the tunnel is Ready
 4. If using `annotationFilter`, ensure HTTPRoutes have the matching annotation
-5. Check controller logs: `kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep cloudflaredns`
+5. Check controller logs: `kubectl logs -n cfgate-system deploy/cfgate -c manager | grep cloudflaredns`
 
 ### GatewayClass not showing Accepted
 
 1. Verify `spec.controllerName` is exactly `cfgate.io/cloudflare-tunnel-controller`
 2. Check the controller is running: `kubectl get pods -n cfgate-system`
-3. Check controller logs for startup errors: `kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep gatewayclass`
+3. Check controller logs for startup errors: `kubectl logs -n cfgate-system deploy/cfgate -c manager | grep gatewayclass`
 
 ### Access policy CredentialsInvalid
 
@@ -352,7 +352,7 @@ See the [Kiali CR Reference](https://kiali.io/docs/configuration/kialis.kiali.io
 1. Check the tunnel referenced by `cfgate.io/tunnel-ref` annotation: `kubectl get cloudflaretunnel -A`
 2. Verify tunnel status shows `Ready: True` with all 5 conditions healthy
 3. If tunnel shows `TunnelReady: False`, check Cloudflare API credentials
-4. Check controller logs: `kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep gateway`
+4. Check controller logs: `kubectl logs -n cfgate-system deploy/cfgate -c manager | grep gateway`
 
 ### Stuck finalizers on deletion
 
@@ -367,16 +367,18 @@ If a resource won't delete (stuck in Terminating):
 
 ```bash
 # All controller logs
-kubectl logs -n cfgate-system deploy/cfgate-controller -c manager
+kubectl logs -n cfgate-system deploy/cfgate -c manager
 
 # Filter by reconciler
-kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep "controller-name"
+kubectl logs -n cfgate-system deploy/cfgate -c manager | grep "controller-name"
 
 # Follow logs in real time
-kubectl logs -n cfgate-system deploy/cfgate-controller -c manager -f
+kubectl logs -n cfgate-system deploy/cfgate -c manager -f
 
 # Common controller names in logs: tunnel, gateway, gatewayclass, httproute, cloudflaredns, accesspolicy
 ```
+
+> **Note:** These commands assume the Helm install with release name `cfgate`. For kustomize deployments, replace `deploy/cfgate` with `deploy/controller-manager`.
 
 ## Development
 
