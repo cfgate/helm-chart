@@ -171,11 +171,13 @@ Manages Cloudflare Access applications and policies for zero-trust authenticatio
 
 | Field                 | Description                                 |
 | --------------------- | ------------------------------------------- |
-| `spec.targetRef`      | Gateway API resource to protect             |
-| `spec.hostnames[]`    | Explicit hostnames for Access application   |
-| `spec.tunnelRef`      | Tunnel reference for credential inheritance |
-| `spec.authentication` | Identity provider configuration             |
-| `spec.rules[]`        | Access rules (allow, deny, bypass)          |
+| `spec.targetRef`      | Single Gateway API resource to protect (Gateway, HTTPRoute, etc.) |
+| `spec.targetRefs[]`   | Multiple targets (mutually exclusive with targetRef, max 16)      |
+| `spec.cloudflareRef`  | Cloudflare credentials (optional — inherits via Gateway target)   |
+| `spec.application`    | Access Application settings (name, domain, IdP config)            |
+| `spec.policies[]`     | Access policies: allow, deny, bypass rules (max 50)               |
+| `spec.serviceTokens`  | Machine-to-machine authentication tokens                          |
+| `spec.mtls`           | Certificate-based authentication                                  |
 
 #### Access Application Settings
 
@@ -206,6 +208,23 @@ spec:
       allowedOrigins: ["https://app.example.com"]
       maxAge: 86400
 ```
+
+### Credential Resolution
+
+CloudflareAccessPolicy resolves Cloudflare API credentials through two paths:
+
+1. **Explicit `cloudflareRef`**: Set `spec.cloudflareRef` with a secret reference and account ID. Always works for any target type.
+
+2. **Inherited from tunnel**: When targeting a Gateway that has a `cfgate.io/tunnel-ref` annotation, the controller walks the chain: Gateway → `cfgate.io/tunnel-ref` annotation → CloudflareTunnel → `spec.cloudflare.secretRef`. No `cloudflareRef` needed on the policy.
+
+   For HTTPRoute targets, the controller walks: HTTPRoute → `spec.parentRefs[]` → parent Gateway → same tunnel chain as above.
+
+If neither path resolves credentials, reconciliation fails with `CredentialsInvalid` and the message: *"set cloudflareRef or ensure targets reference a tunnel"*.
+
+**When to use explicit `cloudflareRef`:**
+- Targeting resources not attached to a cfgate Gateway
+- Using a different API token than the tunnel's
+- Cross-namespace policies where the chain can't be walked
 
 ### HTTPRoute Annotations
 
@@ -304,6 +323,60 @@ external_services:
 > **Note:** Setting `gateway_api_classes` explicitly replaces Kiali's auto-discovery. Include all GatewayClasses you want Kiali to recognize (e.g., `istio`, `istio-remote`, `cfgate`).
 
 See the [Kiali CR Reference](https://kiali.io/docs/configuration/kialis.kiali.io/) for all configuration options.
+
+## Troubleshooting
+
+### DNS records not syncing
+
+1. Check CloudflareDNS status: `kubectl get cloudflaredns -A -o yaml`
+2. Verify `status.conditions` — look for `Synced: True`
+3. If using `gatewayRoutes.enabled: true`, ensure the Gateway has a `cfgate.io/tunnel-ref` annotation and the tunnel is Ready
+4. If using `annotationFilter`, ensure HTTPRoutes have the matching annotation
+5. Check controller logs: `kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep cloudflaredns`
+
+### GatewayClass not showing Accepted
+
+1. Verify `spec.controllerName` is exactly `cfgate.io/cloudflare-tunnel-controller`
+2. Check the controller is running: `kubectl get pods -n cfgate-system`
+3. Check controller logs for startup errors: `kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep gatewayclass`
+
+### Access policy CredentialsInvalid
+
+1. If using explicit `cloudflareRef`: verify the secret exists and contains `CLOUDFLARE_API_TOKEN`
+2. If relying on credential inheritance: verify the target Gateway has `cfgate.io/tunnel-ref` annotation pointing to a valid CloudflareTunnel
+3. For HTTPRoute targets: the controller walks HTTPRoute → parentRef → Gateway → tunnel. Ensure the parent Gateway has the tunnel annotation
+4. Verify the API token has `Access: Apps and Policies: Edit` permission at the Account level
+
+### Gateway not Programmed
+
+1. Check the tunnel referenced by `cfgate.io/tunnel-ref` annotation: `kubectl get cloudflaretunnel -A`
+2. Verify tunnel status shows `Ready: True` with all 5 conditions healthy
+3. If tunnel shows `TunnelReady: False`, check Cloudflare API credentials
+4. Check controller logs: `kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep gateway`
+
+### Stuck finalizers on deletion
+
+If a resource won't delete (stuck in Terminating):
+
+1. Check if credentials are still valid — finalizers need API access for cleanup
+2. For CloudflareAccessPolicy: the controller must delete the Access Application from Cloudflare before removing the finalizer
+3. If credentials are permanently unavailable, manually remove the finalizer: `kubectl patch <resource> <name> -p '{"metadata":{"finalizers":null}}' --type=merge`
+4. **Warning:** Removing finalizers skips Cloudflare-side cleanup. Manually delete orphaned resources in the Cloudflare dashboard
+
+### Checking controller logs
+
+```bash
+# All controller logs
+kubectl logs -n cfgate-system deploy/cfgate-controller -c manager
+
+# Filter by reconciler
+kubectl logs -n cfgate-system deploy/cfgate-controller -c manager | grep "controller-name"
+
+# Follow logs in real time
+kubectl logs -n cfgate-system deploy/cfgate-controller -c manager -f
+
+# Common controller names in logs: tunnel, gateway, gatewayclass, httproute, cloudflaredns, accesspolicy
+```
 
 ## Development
 
