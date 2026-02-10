@@ -7,7 +7,7 @@ echo "Running lint"
 
 fix_flag=""
 case "${LINT_FIX:-}" in
-  1|true) fix_flag="--fix" ;;
+1 | true) fix_flag="--fix" ;;
 esac
 
 golangci-lint -E ginkgolinter run $fix_flag

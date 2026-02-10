@@ -4,20 +4,20 @@
 set -eu
 
 if [ -n "${IMAGE:-}" ]; then
-  cd config/manager && kustomize edit set image "controller=${IMAGE}" && cd ../..
+	(cd config/manager && kustomize edit set image "controller=${IMAGE}")
 fi
 
 rm -rf dist
 mkdir -p dist/crds
 for f in config/crd/bases/cfgate.io_*.yaml; do
-  name=$(basename "$f" .yaml)
-  cp "$f" "dist/crds/${name#cfgate.io_}.yaml"
+	name=$(basename "$f" .yaml)
+	cp "$f" "dist/crds/${name#cfgate.io_}.yaml"
 done
-cat dist/crds/*.yaml > dist/crds.yaml
-kubectl kustomize config/default > dist/install.yaml
+cat dist/crds/*.yaml >dist/crds.yaml
+kubectl kustomize config/default >dist/install.yaml
 
 if [ -n "${IMAGE:-}" ]; then
-  git checkout config/manager/kustomization.yaml 2>/dev/null || true
+	git checkout config/manager/kustomization.yaml 2>/dev/null || true
 fi
 
 echo "Release manifests written to dist/"

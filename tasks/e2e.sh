@@ -13,17 +13,17 @@ mkdir -p out
 
 focus_flag=""
 if [ -n "${E2E_FOCUS:-}" ]; then
-  focus_flag="--focus=${E2E_FOCUS}"
+	focus_flag="--focus=${E2E_FOCUS}"
 fi
 
 ginkgo -vv \
-  --procs="${E2E_PROCS:-4}" \
-  --keep-going \
-  --silence-skips \
-  --poll-progress-after=15s \
-  $focus_flag \
-  --output-dir out \
-  --json-report=run.json \
-  --cover --covermode atomic --coverprofile coverage.out \
-  --race \
-  ./test/e2e
+	--procs="${E2E_PROCS:-4}" \
+	--keep-going \
+	--silence-skips \
+	--poll-progress-after=15s \
+	$focus_flag \
+	--output-dir out \
+	--json-report=run.json \
+	--cover --covermode atomic --coverprofile coverage.out \
+	--race \
+	./test/e2e
