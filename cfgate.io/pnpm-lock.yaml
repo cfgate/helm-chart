@@ -11,9 +11,6 @@ importers:
       '@inherent.design/brand':
         specifier: file:../../inherent.design/brand
         version: file:../../inherent.design/brand
-      '@inherent.design/fonts':
-        specifier: file:../../inherent.design/brand/fonts
-        version: file:../../inherent.design/brand/fonts
       '@tabler/icons':
         specifier: ^3.36.1
         version: 3.36.1
@@ -793,9 +790,6 @@ packages:
 
   '@inherent.design/brand@file:../../inherent.design/brand':
     resolution: {directory: ../../inherent.design/brand, type: directory}
-
-  '@inherent.design/fonts@file:../../inherent.design/brand/fonts':
-    resolution: {directory: ../../inherent.design/brand/fonts, type: directory}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -3618,8 +3612,6 @@ snapshots:
     optional: true
 
   '@inherent.design/brand@file:../../inherent.design/brand': {}
-
-  '@inherent.design/fonts@file:../../inherent.design/brand/fonts': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:

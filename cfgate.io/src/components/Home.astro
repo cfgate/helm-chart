@@ -30,15 +30,24 @@ const { subtitle, description } = t[locale] ?? t.en
 
 <Base title='cfgate' description={description}>
   <main class='relative flex min-h-dvh flex-col items-center justify-center px-6'>
-    <nav class='absolute top-6 right-6 flex items-center gap-1 font-body text-sm' aria-label='Language'>
-      {locales.map((l, i) => (
-        <>
-          {i > 0 && <Separator orientation="vertical" class="h-3 self-center" />}
-          {l.code === locale
-            ? <span class='locale-active'>{l.label}</span>
-            : <a href={l.href} class='locale-link'>{l.label}</a>}
-        </>
-      ))}
+    <nav
+      class='absolute top-6 right-6 flex items-center gap-1 font-body text-sm'
+      aria-label='Language'
+    >
+      {
+        locales.map((l, i) => (
+          <>
+            {i > 0 && <Separator orientation='vertical' class='h-3 self-center' />}
+            {l.code === locale ? (
+              <span class='locale-active'>{l.label}</span>
+            ) : (
+              <a href={l.href} class='locale-link'>
+                {l.label}
+              </a>
+            )}
+          </>
+        ))
+      }
     </nav>
     <h1 class='site-title'><span class='text-primary'>cf</span>gate</h1>
     <p class='mt-4 text-muted-foreground'>
@@ -53,12 +62,7 @@ const { subtitle, description } = t[locale] ?? t.en
       >
         github
       </Button>
-      <Button
-        href='https://inherent.design'
-        target='_blank'
-        variant='outline'
-        class='rounded-none'
-      >
+      <Button href='https://inherent.design' target='_blank' variant='outline' class='rounded-none'>
         inherent.design
       </Button>
     </nav>

@@ -1,10 +1,10 @@
 @import '@inherent.design/brand/starwind';
 @import '@inherent.design/brand/styles';
 
-@import '@inherent.design/fonts/vars';
-@import '@inherent.design/fonts/en';
-@import '@inherent.design/fonts/zh';
-@import '@inherent.design/fonts/hi';
+@import '@inherent.design/brand/fonts/vars';
+@import '@inherent.design/brand/fonts/en';
+@import '@inherent.design/brand/fonts/zh';
+@import '@inherent.design/brand/fonts/hi';
 
 /* cfgate dark-mode identity — overrides brand .dark palette */
 .dark {
