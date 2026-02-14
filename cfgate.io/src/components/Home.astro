@@ -1,7 +1,7 @@
 ---
 import Base from '@/layouts/Base.astro'
-import { Button } from '@/components/starwind/button'
-import { Separator } from '@/components/starwind/separator'
+import { Button } from '@inherent.design/brand/components/button'
+import { Separator } from '@inherent.design/brand/components/separator'
 
 const locale = Astro.currentLocale ?? 'en'
 const locales = [
@@ -31,7 +31,7 @@ const { subtitle, description } = t[locale] ?? t.en
 <Base title='cfgate' description={description}>
   <main class='relative flex min-h-dvh flex-col items-center justify-center px-6'>
     <nav
-      class='absolute top-6 right-6 flex items-center gap-1 font-body text-sm'
+      class='absolute top-6 right-6 flex items-center gap-1 text-sm'
       aria-label='Language'
     >
       {
@@ -53,49 +53,17 @@ const { subtitle, description } = t[locale] ?? t.en
     <p class='mt-4 text-muted-foreground'>
       {subtitle}
     </p>
-    <nav class='mt-8 flex items-center gap-4 font-body'>
+    <nav class='mt-8 flex items-center gap-4'>
       <Button
         href='https://github.com/inherent-design/cfgate'
         target='_blank'
         variant='primary'
-        class='rounded-none'
       >
         github
       </Button>
-      <Button href='https://inherent.design' target='_blank' variant='outline' class='rounded-none'>
+      <Button href='https://inherent.design' target='_blank' variant='outline'>
         inherent.design
       </Button>
     </nav>
   </main>
 </Base>
-
-<style>
-  .locale-link {
-    color: var(--muted-foreground);
-    text-decoration: none;
-    transition: color 0.15s ease;
-    min-height: 44px;
-    min-width: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .locale-link:hover {
-    color: var(--foreground);
-  }
-
-  .locale-active {
-    color: var(--foreground);
-    min-height: 44px;
-    min-width: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .site-title {
-    font-family: var(--font-display);
-    font-style: italic;
-  }
-</style>
