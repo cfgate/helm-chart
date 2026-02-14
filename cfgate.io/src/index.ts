@@ -1,16 +1,16 @@
+import type { AppEnv } from '@/types.js'
 import { Hono } from 'hono'
-import type { AppEnv } from './types.js'
 
 // Middleware
-import { loggerMiddleware } from './middleware/logger.js'
-import { requestIdMiddleware } from './middleware/request-id.js'
+import { loggerMiddleware } from '@/middleware/logger.js'
+import { requestIdMiddleware } from '@/middleware/request-id.js'
 
 // Handlers
-import { errorHandler, notFoundHandler } from './handlers/error.js'
-import { landingHandler } from './handlers/landing.js'
-import { PROXY_PATHS, proxyHandler } from './handlers/proxy.js'
-import { redirectHandler } from './handlers/redirect.js'
-import { isGoGetRequest, vanityHandler } from './handlers/vanity.js'
+import { errorHandler, notFoundHandler } from '@/handlers/error.js'
+import { landingHandler } from '@/handlers/landing.js'
+import { PROXY_PATHS, proxyHandler } from '@/handlers/proxy.js'
+import { redirectHandler } from '@/handlers/redirect.js'
+import { isGoGetRequest, vanityHandler } from '@/handlers/vanity.js'
 
 /**
  * cfgate.io Cloudflare Worker

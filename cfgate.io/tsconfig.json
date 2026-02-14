@@ -1,6 +1,12 @@
 {
   "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
     "lib": [
       "es2024",
       "ESNext.Array",
@@ -9,7 +15,10 @@
       "ESNext.Iterator",
       "ESNext.Promise"
     ],
-    "types": ["@cloudflare/vitest-pool-workers", "node"],
+    "types": [
+      "@cloudflare/vitest-pool-workers",
+      "node"
+    ],
     "plugins": [
       {
         "name": "@astrojs/ts-plugin"
@@ -24,6 +33,12 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": [".astro/types.d.ts", "src"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    ".astro/types.d.ts",
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -1,5 +1,6 @@
 import type { Context } from 'hono'
-import type { AppEnv } from '../types.js'
+
+import type { AppEnv } from '@/types.js'
 
 export async function landingHandler(c: Context<AppEnv>): Promise<Response> {
   c.var.logCtx.handler = 'landing'
@@ -9,5 +10,5 @@ export async function landingHandler(c: Context<AppEnv>): Promise<Response> {
     return new Response(asset.body, asset)
   }
 
-  return c.text('cfgate', 200)
+  return c.text('cfgate', 200) // FIXME: should note why if it all this would run
 }

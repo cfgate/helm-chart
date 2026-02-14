@@ -1,5 +1,6 @@
 import type { Context, ErrorHandler, NotFoundHandler } from 'hono'
-import type { AppEnv } from '../types.js'
+
+import type { AppEnv } from '@/types.js'
 
 /**
  * Not found handler

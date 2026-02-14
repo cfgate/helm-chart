@@ -1,5 +1,6 @@
 import { createMiddleware } from 'hono/factory'
-import type { AppEnv, LogContext } from '../types.js'
+
+import type { AppEnv, LogContext } from '@/types.js'
 
 /**
  * Wide-event logging middleware

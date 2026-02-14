@@ -1,0 +1,97 @@
+---
+import Base from '@/layouts/Base.astro'
+import { Button } from '@/components/starwind/button'
+import { Separator } from '@/components/starwind/separator'
+
+const locale = Astro.currentLocale ?? 'en'
+const locales = [
+  { code: 'en', label: 'en', href: '/' },
+  { code: 'hi', label: 'hi', href: '/hi/' },
+  { code: 'zh', label: 'cn', href: '/zh/' },
+]
+
+const t: Record<string, { subtitle: string; description: string }> = {
+  en: {
+    subtitle: 'kubernetes-native cloudflare management.',
+    description: 'Kubernetes-native Cloudflare management.',
+  },
+  zh: {
+    subtitle: 'kubernetes 原生 cloudflare 管理。',
+    description: 'Kubernetes 原生 Cloudflare 管理。',
+  },
+  hi: {
+    subtitle: 'kubernetes-native cloudflare management.',
+    description: 'Kubernetes-native Cloudflare management.',
+  },
+}
+
+const { subtitle, description } = t[locale] ?? t.en
+---
+
+<Base title='cfgate' description={description}>
+  <main class='relative flex min-h-dvh flex-col items-center justify-center px-6'>
+    <nav class='absolute top-6 right-6 flex items-center gap-1 font-body text-sm' aria-label='Language'>
+      {locales.map((l, i) => (
+        <>
+          {i > 0 && <Separator orientation="vertical" class="h-3 self-center" />}
+          {l.code === locale
+            ? <span class='locale-active'>{l.label}</span>
+            : <a href={l.href} class='locale-link'>{l.label}</a>}
+        </>
+      ))}
+    </nav>
+    <h1 class='site-title'><span class='text-primary'>cf</span>gate</h1>
+    <p class='mt-4 text-muted-foreground'>
+      {subtitle}
+    </p>
+    <nav class='mt-8 flex items-center gap-4 font-body'>
+      <Button
+        href='https://github.com/inherent-design/cfgate'
+        target='_blank'
+        variant='primary'
+        class='rounded-none'
+      >
+        github
+      </Button>
+      <Button
+        href='https://inherent.design'
+        target='_blank'
+        variant='outline'
+        class='rounded-none'
+      >
+        inherent.design
+      </Button>
+    </nav>
+  </main>
+</Base>
+
+<style>
+  .locale-link {
+    color: var(--muted-foreground);
+    text-decoration: none;
+    transition: color 0.15s ease;
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .locale-link:hover {
+    color: var(--foreground);
+  }
+
+  .locale-active {
+    color: var(--foreground);
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-title {
+    font-family: var(--font-display);
+    font-style: italic;
+  }
+</style>

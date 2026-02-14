@@ -1,5 +1,6 @@
 import type { Context } from 'hono'
-import type { AppEnv } from '../types.js'
+
+import type { AppEnv } from '@/types.js'
 
 /**
  * GitHub release base URL
