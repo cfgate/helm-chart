@@ -5,9 +5,66 @@ All notable changes to cfgate are documented in this file.
 
 ## [Unreleased]
 
+### Features
+
+- Scaffold Astro alongside Hono worker
+- **(site)** Wire static assets and OG tags into Astro layout
+- **(site)** Integrate brand design system, i18n, and Starwind UI
+- **(site)** Add Hindi translation, fix zh locale label
+
+### Bug Fixes
+
+- **(test)** Add fallback credentials to deletion invariant DNS resource
+- Patch task scripts for empty-arg bug, fragile cd, contract docs
+- **(site)** Update English subtitle to match translation structure
+
+### Testing
+
+- Fix invariant assertion, add conflict retry to bare Get/Update sites
+
+### Documentation
+
+- Convert ASCII diagrams to Mermaid
+
+### Refactoring
+
+- Extract shared task scripts for mise/CI invariance
+- **(site)** Switch to published @inherent.design/brand package
+- **(site)** Use brand components, theme button globally
+
+### Maintenance
+
+- Update pnpm-lock
+- **(site)** Update packages
+- **(site)** Remove stale scripts, rename deploy:cf -> deploy
+- **(site)** Fix scripts
+- Update brand package
+- Update README
+- Sync chart + app version
+
+## [0.1.0-alpha.9] - 2026-02-09
+
+### Testing
+
+- Add E2E invariant tests for structural property verification
+
+### Documentation
+
+- Alpha.9 documentation overhaul, purge origin-no-tls-verify, fix examples
+
+## [0.1.0-alpha.8] - 2026-02-09
+
 ### Bug Fixes
 
 - **(controller)** Register v1beta1 scheme, sync AccessPolicy CRD, demote noisy log
+
+### Documentation
+
+- Fix deployment names, remove dead dns-sync annotations from examples
+
+### Maintenance
+
+- Update changelog
 
 ## [0.1.0-alpha.7] - 2026-02-09
 
