@@ -1,7 +1,7 @@
 "$schema" = "./node_modules/wrangler/config-schema.json"
 name = "cfgate-worker"
 main = "./src/index.ts"
-compatibility_date = "2026-01-31"
+compatibility_date = "2026-02-18"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 
