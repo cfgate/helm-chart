@@ -7,7 +7,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   release:
@@ -15,131 +14,36 @@ jobs:
     permissions:
       contents: write
       packages: write
-      attestations: write
-      id-token: write
 
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: "go.mod"
-
-      - uses: docker/setup-qemu-action@v3
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - id: version
-        run: echo "clean=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
-
-      - id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix=
-          labels: |
-            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/inherent-design/cfgate/main/README.md
-            io.artifacthub.package.license=Apache-2.0
-
-      - id: push
-        uses: useblacksmith/build-push-action@v2
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VERSION=${{ steps.version.outputs.clean }}
-            COMMIT=${{ github.sha }}
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
-          provenance: mode=max
-          sbom: true
-
-      - name: Attest container provenance
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-
-      - name: Install tools
-        run: |
-          go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.20.0
-          go install sigs.k8s.io/kustomize/kustomize/v5@latest
-      - name: Generate manifests
-        run: |
-          sh tasks/codegen.sh
-          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.clean }} sh tasks/manifests.sh
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v4.3.0
+      - uses: azure/setup-helm@v4.3.0
         with:
           version: v4.1.0
 
-      - name: Lint Helm chart
-        run: sh tasks/helm-lint.sh
+      - name: Lint chart
+        run: helm lint .
 
-      - name: Sync Chart.yaml appVersion
-        run: |
-          sed -i "s/^appVersion:.*/appVersion: \"${{ steps.version.outputs.clean }}\"/" charts/cfgate/Chart.yaml
+      - name: Package chart
+        run: helm package . -d dist/
 
-      - name: Package Helm chart
-        run: helm package charts/cfgate -d dist/
-
-      - name: Push Helm chart to GHCR
+      - name: Push chart to GHCR
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-          helm push dist/cfgate-*.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
-
-      - name: Generate changelog
-        id: changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          GITHUB_REPO: ${{ github.repository }}
+          helm push dist/cfgate-*.tgz oci://ghcr.io/cfgate/charts
 
       - uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.content }}
-          files: |
-            dist/install.yaml
-            dist/crds.yaml
-            dist/crds/*.yaml
-            dist/cfgate-*.tgz
+          files: dist/cfgate-*.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Summary
-        run: |
-          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Version: ${{ steps.version.outputs.clean }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.clean }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Digest: ${{ steps.push.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Helm Chart: cfgate-${{ steps.version.outputs.clean }}.tgz" >> $GITHUB_STEP_SUMMARY
 
       - uses: oras-project/setup-oras@v1
 
       - name: Push Artifact Hub metadata
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
-          oras push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:artifacthub.io \
-            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
-            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
-          oras push ${{ env.REGISTRY }}/${{ github.repository_owner }}/charts/cfgate:artifacthub.io \
+          oras push ${{ env.REGISTRY }}/cfgate/charts/cfgate:artifacthub.io \
             --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
             artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml

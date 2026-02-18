@@ -1,0 +1,62 @@
+cfgate has been installed.
+
+Chart version: {{ .Chart.Version }}
+App version: {{ .Chart.AppVersion }}
+
+{{- if .Values.installCRDs }}
+
+CRDs installed:
+  - cloudflaretunnels.cfgate.io
+  - cloudflarednses.cfgate.io
+  - cloudflareaccesspolicies.cfgate.io
+
+Note: CRDs have "helm.sh/resource-policy: keep" annotation and will not be
+deleted when the chart is uninstalled. To remove CRDs manually:
+
+  kubectl delete crd cloudflaretunnels.cfgate.io
+  kubectl delete crd cloudflarednses.cfgate.io
+  kubectl delete crd cloudflareaccesspolicies.cfgate.io
+
+{{- end }}
+
+To verify the controller is running:
+
+  kubectl get pods -n {{ include "cfgate.namespace" . }} -l app.kubernetes.io/name={{ include "cfgate.name" . }}
+
+To check controller logs:
+
+  kubectl logs -n {{ include "cfgate.namespace" . }} -l app.kubernetes.io/name={{ include "cfgate.name" . }} -f
+
+Quick start:
+
+1. Create a Cloudflare API token with the following permissions:
+   - Account > Cloudflare Tunnel > Edit
+   - Zone > DNS > Edit
+   - Account > Access: Apps and Policies > Edit
+   - Account > Account Settings > Read (if using accountName instead of accountId)
+
+2. Create a secret with your credentials:
+
+   kubectl create secret generic cloudflare-credentials \
+     --namespace {{ include "cfgate.namespace" . }} \
+     --from-literal=CLOUDFLARE_API_TOKEN=<your-api-token>
+
+3. Create a CloudflareTunnel resource:
+
+   cat <<EOF | kubectl apply -f -
+   apiVersion: cfgate.io/v1alpha1
+   kind: CloudflareTunnel
+   metadata:
+     name: my-tunnel
+     namespace: {{ include "cfgate.namespace" . }}
+   spec:
+     tunnel:
+       name: my-tunnel
+     cloudflare:
+       accountId: "<your-account-id>"
+       secretRef:
+         name: cloudflare-credentials
+   EOF
+
+Documentation: https://cfgate.io
+Source: https://github.com/cfgate/cfgate
