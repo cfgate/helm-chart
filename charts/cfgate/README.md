@@ -161,6 +161,44 @@ After installing the chart, see the [cfgate documentation](https://github.com/in
 - Configuring HTTPRoute annotations for per-route origin settings
 - Multi-zone DNS configuration
 
+## Artifact Hub
+
+This chart is published to [Artifact Hub](https://artifacthub.io/) via OCI from `oci://ghcr.io/inherent-design/charts/cfgate`.
+
+### Prerelease Annotations
+
+Chart.yaml includes Artifact Hub annotations that control how the chart appears in search results:
+
+| Annotation | Value | Purpose |
+|-----------|-------|---------|
+| `artifacthub.io/prerelease` | `"true"` or `"false"` | Marks chart as prerelease in Artifact Hub UI |
+| `artifacthub.io/license` | `Apache-2.0` | SPDX license identifier |
+| `artifacthub.io/category` | `networking` | Artifact Hub category filter |
+| `artifacthub.io/operator` | `"true"` | Flags chart as a Kubernetes operator |
+| `artifacthub.io/operatorCapabilities` | `Basic Install` | Operator maturity level |
+| `artifacthub.io/images` | (YAML list) | Container images used by the chart |
+
+### Release Transitions
+
+When moving between release stages, update `Chart.yaml` annotations:
+
+**Alpha/Beta builds** (`appVersion: "0.1.0-alpha.10"`):
+```yaml
+artifacthub.io/prerelease: "true"
+```
+
+**Release candidates** (`appVersion: "0.1.0-rc.1"`):
+```yaml
+artifacthub.io/prerelease: "true"
+```
+
+**Stable releases** (`appVersion: "0.1.0"`):
+```yaml
+artifacthub.io/prerelease: "false"
+```
+
+The `appVersion` in Chart.yaml is auto-synced during release (see `.github/workflows/release.yml`). The `artifacthub.io/prerelease` annotation must be updated manually before tagging a stable release.
+
 ## Chart Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for chart-project synchronization, CRD regeneration, and RBAC updates.
