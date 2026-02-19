@@ -7,6 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
+  CHART_REF: ghcr.io/cfgate/charts/cfgate
 
 jobs:
   release:
@@ -19,18 +20,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - id: channel
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [[ "$VERSION" == *"-alpha."* || "$VERSION" == *"-beta."* || "$VERSION" == *"-rc."* ]]; then
-            echo "prerelease=true" >> $GITHUB_OUTPUT
-          else
-            echo "prerelease=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Patch prerelease annotation
-        run: |
-          sed -i "s|artifacthub.io/prerelease:.*|artifacthub.io/prerelease: \"${{ steps.channel.outputs.prerelease }}\"|" Chart.yaml
+      - id: version
+        run: echo "clean=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - uses: azure/setup-helm@v4.3.1
         with:
@@ -47,17 +38,21 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
           helm push dist/cfgate-*.tgz oci://ghcr.io/cfgate/charts
 
+      - uses: oras-project/setup-oras@v1
+
+      - name: Tag latest
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
+          oras tag ${{ env.CHART_REF }}:${{ steps.version.outputs.clean }} latest
+
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/cfgate-*.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: oras-project/setup-oras@v1
-
       - name: Push Artifact Hub metadata
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
-          oras push ${{ env.REGISTRY }}/cfgate/charts/cfgate:artifacthub.io \
+          oras push ${{ env.CHART_REF }}:artifacthub.io \
             --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
             artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
