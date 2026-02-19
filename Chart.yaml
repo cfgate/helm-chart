@@ -2,7 +2,7 @@ apiVersion: v2
 name: cfgate
 description: Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access
 type: application
-version: 1.0.11
+version: 1.0.12
 appVersion: "0.1.0-alpha.12"
 kubeVersion: ">= 1.26.0-0"
 
@@ -24,8 +24,8 @@ sources:
   - https://github.com/cfgate/helm-chart
 
 maintainers:
-  - name: cfgate
-    url: https://github.com/cfgate
+  - name: inherent-design
+    url: https://github.com/inherent-design
 
 annotations:
   artifacthub.io/license: Apache-2.0
