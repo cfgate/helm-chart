@@ -11,6 +11,7 @@ env:
 jobs:
   release:
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 15
     permissions:
       contents: write
       packages: write
@@ -18,7 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: azure/setup-helm@v4.3.0
+      - id: channel
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" == *"-alpha."* || "$VERSION" == *"-beta."* || "$VERSION" == *"-rc."* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Patch prerelease annotation
+        run: |
+          sed -i "s|artifacthub.io/prerelease:.*|artifacthub.io/prerelease: \"${{ steps.channel.outputs.prerelease }}\"|" Chart.yaml
+
+      - uses: azure/setup-helm@v4.3.1
         with:
           version: v4.1.0
 
