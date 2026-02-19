@@ -1,6 +1,10 @@
 # cfgate Helm Chart
 
-Installs the cfgate controller -- a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
+[![Chart Version](https://img.shields.io/github/v/release/cfgate/helm-chart?style=flat&label=chart&logo=helm&logoColor=white&color=0F1689)](https://github.com/cfgate/helm-chart/releases/latest) [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cfgate-helm)](https://artifacthub.io/packages/helm/cfgate-helm/cfgate)
+
+[![CI](https://img.shields.io/github/actions/workflow/status/cfgate/helm-chart/ci.yml?style=flat)](https://github.com/cfgate/helm-chart/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/cfgate/helm-chart?style=flat)](LICENSE)
+
+Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
@@ -41,7 +45,7 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
 helm uninstall cfgate --namespace cfgate-system
 ```
 
-CRDs are **not** deleted on uninstall (annotated with `helm.sh/resource-policy: keep`). This prevents accidental deletion of all CloudflareTunnel, CloudflareDNS, and CloudflareAccessPolicy resources in the cluster. To remove CRDs manually:
+CRDs are not deleted on uninstall (annotated with `helm.sh/resource-policy: keep`). This prevents accidental deletion of all CloudflareTunnel, CloudflareDNS, and CloudflareAccessPolicy resources in the cluster. To remove CRDs manually:
 
 ```bash
 kubectl delete crd cloudflaretunnels.cfgate.io
@@ -182,7 +186,7 @@ Chart.yaml includes Artifact Hub annotations that control how the chart appears 
 
 When moving between release stages, update `Chart.yaml` annotations:
 
-**Alpha/Beta builds** (`appVersion: "0.1.0-alpha.10"`):
+**Alpha/Beta builds** (`appVersion: "0.1.0-alpha.12"`):
 ```yaml
 artifacthub.io/prerelease: "true"
 ```
