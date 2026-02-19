@@ -43,6 +43,12 @@ jobs:
           DIGEST=$(echo "$OUTPUT" | grep -oP 'sha256:[a-f0-9]+')
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: sigstore/cosign-installer@v3
 
       - name: Sign chart
