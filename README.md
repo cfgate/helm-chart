@@ -123,13 +123,13 @@ kubectl delete crd cloudflareaccesspolicies.cfgate.io
 
 ## High Availability
 
-HA is enabled by default with 2 replicas. To scale further:
+High availability is enabled by default with 2 replicas. To scale further:
 
 ```yaml
 replicaCount: 3
 ```
 
-Leader election is always enabled (`--leader-elect`). Only one replica actively reconciles at a time. Standby replicas take over if the leader fails.
+Leader election is always enabled via `--leader-elect`, so only one replica actively reconciles at a time while standby replicas take over if the leader fails.
 
 ## Monitoring
 
@@ -186,7 +186,7 @@ Chart.yaml includes Artifact Hub annotations that control how the chart appears 
 
 When moving between release stages, update `Chart.yaml` annotations:
 
-**Alpha/Beta builds** (`appVersion: "0.1.0-alpha.12"`):
+**Alpha/Beta builds** (`appVersion: "0.1.0-alpha.13"`):
 ```yaml
 artifacthub.io/prerelease: "true"
 ```
