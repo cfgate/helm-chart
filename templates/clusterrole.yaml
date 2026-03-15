@@ -28,6 +28,15 @@ rules:
       - get
       - list
       - watch
+  # Core resources - namespaces (read-only)
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
   # Core resources - events
   - apiGroups:
       - ""
