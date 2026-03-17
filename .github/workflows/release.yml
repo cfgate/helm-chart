@@ -49,7 +49,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@v4
 
       - name: Sign chart
         run: cosign sign --yes ${{ env.CHART_REF }}@${{ steps.push.outputs.digest }}
