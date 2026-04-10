@@ -9,7 +9,10 @@ on:
       - "values.schema.json"
       - "templates/**"
       - "ci/**"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/**"
+      - ".github/actionlint.yaml"
+      - "cliff.toml"
+      - "artifacthub-repo.yml"
   pull_request:
     branches: [main]
     paths:
@@ -18,7 +21,10 @@ on:
       - "values.schema.json"
       - "templates/**"
       - "ci/**"
-      - ".github/workflows/ci.yml"
+      - ".github/workflows/**"
+      - ".github/actionlint.yaml"
+      - "cliff.toml"
+      - "artifacthub-repo.yml"
   workflow_dispatch:
 
 permissions:
@@ -29,15 +35,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  actionlint:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: rhysd/actionlint@v1.7.12
+
   lint:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
 
-      - uses: azure/setup-helm@v4.3.1
+      - uses: azure/setup-helm@v5.0.0
         with:
-          version: v4.1.0
+          version: v4.1.4
 
       - name: Lint chart
         run: helm lint .

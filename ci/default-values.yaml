@@ -1,5 +1,5 @@
-# Minimal values for chart-testing
-# These values are used by ct lint to validate the chart
+# Minimal values for CI chart validation
+# These values are used by helm lint and helm template in CI
 
 replicaCount: 2
 

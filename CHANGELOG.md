@@ -3,6 +3,76 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
+## [Unreleased]
+
+### Bug Fixes
+
+- Correct Artifact Hub shield URL
+
+### CI/CD
+
+- Add Renovate for dependency automation
+- Bump cosign-installer to v4 for Node 24 compatibility
+
+### Maintenance
+
+- **(deps)** Update docker/login-action action to v4
+
+## [1.0.19] - 2026-03-15
+
+### Maintenance
+
+- Add namespace RBAC and bump to v0.1.0-alpha.19
+- Bump default cloudflared image to 2026.3.0-h2c.1
+
+## [1.0.18] - 2026-02-24
+
+### Features
+
+- Bump to 0.1.0-alpha.18, resync tunnel CRD
+
+## [1.0.17] - 2026-02-24
+
+### Bug Fixes
+
+- Remove v prefix from default cloudflared image tag, bump to alpha.17
+
+## [1.0.16] - 2026-02-24
+
+### Features
+
+- Bump to 0.1.0-alpha.16, default image to inherent-design fork
+
+## [1.0.15] - 2026-02-24
+
+### Features
+
+- Bump to 0.1.0-alpha.15, resync tunnel CRD
+
+## [1.0.13] - 2026-02-21
+
+### Features
+
+- Bump to 0.1.0-alpha.13, resync CRDs, fix README prose
+
+## [1.0.12] - 2026-02-19
+
+### Maintenance
+
+- Add shields, clean up README
+- Fix chart maintainer name
+
+## [1.0.11] - 2026-02-19
+
+### Bug Fixes
+
+- **(ci)** Add docker login for cosign registry auth
+
+### Maintenance
+
+- Add cliff config and generate changelog
+- Bump chart version to 1.0.11
+
 ## [1.0.10] - 2026-02-19
 
 ### Features
