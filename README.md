@@ -6,6 +6,8 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
+This chart currently targets cfgate `0.1.0-alpha.20`.
+
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
 - CRDs (CloudflareTunnel, CloudflareDNS, CloudflareAccessPolicy)
@@ -16,7 +18,7 @@ The chart deploys:
 ## Prerequisites
 
 - Kubernetes 1.26+
-- Helm 3.x
+- Helm 3.x or 4.x
 - Gateway API CRDs installed:
 
 ```bash
@@ -186,22 +188,27 @@ Chart.yaml includes Artifact Hub annotations that control how the chart appears 
 
 When moving between release stages, update `Chart.yaml` annotations:
 
-**Alpha/Beta builds** (`appVersion: "0.1.0-alpha.13"`):
+**Alpha/Beta builds** (`appVersion: "0.0.0-alpha.1"`):
 ```yaml
 artifacthub.io/prerelease: "true"
 ```
 
-**Release candidates** (`appVersion: "0.1.0-rc.1"`):
+**Release candidates** (`appVersion: "0.0.0-rc.1"`):
 ```yaml
 artifacthub.io/prerelease: "true"
 ```
 
-**Stable releases** (`appVersion: "0.1.0"`):
+**Stable releases** (`appVersion: "0.0.0"`):
 ```yaml
 artifacthub.io/prerelease: "false"
 ```
 
-The `appVersion` in Chart.yaml is auto-synced during release (see `.github/workflows/release.yml`). The `artifacthub.io/prerelease` annotation must be updated manually before tagging a stable release.
+Update `Chart.yaml` manually before tagging:
+- set `version` to match the release tag without the leading `v`
+- set `appVersion` to the cfgate version the chart targets
+- set `artifacthub.io/prerelease` appropriately for prerelease vs stable publication
+
+The release workflow validates that the tag matches `Chart.yaml version`, but it does not rewrite chart metadata for you.
 
 ## Chart Development
 

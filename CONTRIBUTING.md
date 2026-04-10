@@ -103,10 +103,19 @@ helm template cfgate . --set rbac.create=false
 Update `Chart.yaml`:
 - `version`: Chart version (independent of app)
 - `appVersion`: cfgate release version
+- release tags must match `Chart.yaml version` without the leading `v`
+
+### Changelog
+
+`CHANGELOG.md` is generated from git history via `git-cliff`.
+
+- regenerate it locally when preparing chart releases or housekeeping updates
+- do not hand-edit release entries
 
 ### CI Integration
 
 Chart changes should pass:
+- `actionlint`
 - `helm lint`
 - `helm template` with default values
 - `helm template` with `ci/default-values.yaml`
