@@ -3,6 +3,13 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
+## [1.2.1] - 2026-04-12
+
+### Other
+
+- Sync cfgate alpha.21 surface
+- Target cfgate 0.2.0-alpha.1
+
 ## [Unreleased]
 
 ### Bug Fixes
