@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-This chart currently targets cfgate `0.1.0-alpha.21`.
+This chart currently targets cfgate `0.2.0-alpha.1`.
 
 The current cfgate surface managed by this chart keeps `CloudflareAccessPolicy` scoped to `Gateway` and `HTTPRoute`. Access mTLS support and retired route kinds are not part of the shipped product surface.
 
