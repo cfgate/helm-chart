@@ -6,133 +6,110 @@ metadata:
   labels:
     {{- include "cfgate.labels" . | nindent 4 }}
 rules:
-  # Core resources - secrets
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  # Core resources - services (read-only)
-  - apiGroups:
-      - ""
-    resources:
-      - services
-    verbs:
-      - get
-      - list
-      - watch
-  # Core resources - namespaces (read-only)
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - get
-      - list
-      - watch
-  # Core resources - events
-  - apiGroups:
-      - ""
-      - events.k8s.io
-    resources:
-      - events
-    verbs:
-      - create
-      - patch
-  # Apps resources - deployments (for cloudflared)
-  - apiGroups:
-      - apps
-    resources:
-      - deployments
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  # cfgate.io CRDs
-  - apiGroups:
-      - cfgate.io
-    resources:
-      - cloudflareaccesspolicies
-      - cloudflarednses
-      - cloudflaretunnels
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  # cfgate.io CRDs - finalizers
-  - apiGroups:
-      - cfgate.io
-    resources:
-      - cloudflareaccesspolicies/finalizers
-      - cloudflarednses/finalizers
-      - cloudflaretunnels/finalizers
-    verbs:
-      - update
-  # cfgate.io CRDs - status
-  - apiGroups:
-      - cfgate.io
-    resources:
-      - cloudflareaccesspolicies/status
-      - cloudflarednses/status
-      - cloudflaretunnels/status
-    verbs:
-      - get
-      - patch
-      - update
-  # Leader election
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  # Gateway API resources (read-only)
-  - apiGroups:
-      - gateway.networking.k8s.io
-    resources:
-      - gatewayclasses
-      - gateways
-      - grpcroutes
-      - httproutes
-      - referencegrants
-      - tcproutes
-      - udproutes
-    verbs:
-      - get
-      - list
-      - watch
-  # Gateway API resources - status
-  - apiGroups:
-      - gateway.networking.k8s.io
-    resources:
-      - gatewayclasses/status
-      - gateways/status
-      - httproutes/status
-      - tcproutes/status
-      - udproutes/status
-    verbs:
-      - get
-      - patch
-      - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  - events.k8s.io
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cfgate.io
+  resources:
+  - cloudflareaccesspolicies
+  - cloudflarednses
+  - cloudflaretunnels
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cfgate.io
+  resources:
+  - cloudflareaccesspolicies/finalizers
+  - cloudflarednses/finalizers
+  - cloudflaretunnels/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cfgate.io
+  resources:
+  - cloudflareaccesspolicies/status
+  - cloudflarednses/status
+  - cloudflaretunnels/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses
+  - gateways
+  - httproutes
+  - referencegrants
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses/status
+  - gateways/status
+  - httproutes/status
+  verbs:
+  - get
+  - patch
+  - update
 {{- end }}

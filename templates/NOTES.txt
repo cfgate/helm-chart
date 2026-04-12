@@ -33,6 +33,7 @@ Quick start:
    - Account > Cloudflare Tunnel > Edit
    - Zone > DNS > Edit
    - Account > Access: Apps and Policies > Edit
+   - Account > Access: Service Tokens > Edit (if using service-token-backed Access policies)
    - Account > Account Settings > Read (if using accountName instead of accountId)
 
 2. Create a secret with your credentials:
