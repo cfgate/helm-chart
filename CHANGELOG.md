@@ -3,6 +3,23 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
+## [1.2.2] - 2026-04-28
+
+### Documentation
+
+- Refresh changelog for 1.2.1
+
+### Maintenance
+
+- **(deps)** Update softprops/action-gh-release action to v3
+
+### Other
+
+- Sync cfgate alpha.21 surface
+- Target cfgate 0.2.0-alpha.1
+- Merge remote-tracking branch 'origin/main' into dev
+- Target cfgate 0.2.0-alpha.2
+
 ## [1.2.1] - 2026-04-12
 
 ### Other
