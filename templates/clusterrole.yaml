@@ -50,6 +50,7 @@ rules:
 - apiGroups:
   - cfgate.io
   resources:
+  - cloudflareaccessapplications
   - cloudflareaccesspolicies
   - cloudflarednses
   - cloudflaretunnels
@@ -64,6 +65,7 @@ rules:
 - apiGroups:
   - cfgate.io
   resources:
+  - cloudflareaccessapplications/finalizers
   - cloudflareaccesspolicies/finalizers
   - cloudflarednses/finalizers
   - cloudflaretunnels/finalizers
@@ -72,6 +74,7 @@ rules:
 - apiGroups:
   - cfgate.io
   resources:
+  - cloudflareaccessapplications/status
   - cloudflareaccesspolicies/status
   - cloudflarednses/status
   - cloudflaretunnels/status

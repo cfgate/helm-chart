@@ -3,11 +3,13 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
-## [1.2.2] - 2026-04-28
+## [1.3.0] - 2026-05-15
 
-### Documentation
+### Features
 
-- Refresh changelog for 1.2.1
+- Sync cfgate 0.2.0-alpha.3 chart assets
+
+## [1.2.2] - 2026-04-29
 
 ### Maintenance
 
@@ -15,23 +17,25 @@ All notable changes to the cfgate Helm chart are documented in this file.
 
 ### Other
 
-- Sync cfgate alpha.21 surface
-- Target cfgate 0.2.0-alpha.1
-- Merge remote-tracking branch 'origin/main' into dev
 - Target cfgate 0.2.0-alpha.2
 
 ## [1.2.1] - 2026-04-12
+
+### Documentation
+
+- Refresh changelog for 1.2.1
 
 ### Other
 
 - Sync cfgate alpha.21 surface
 - Target cfgate 0.2.0-alpha.1
 
-## [Unreleased]
+## [1.0.20] - 2026-04-11
 
 ### Bug Fixes
 
 - Correct Artifact Hub shield URL
+- **(chart)** Sync 1.0.20 release housekeeping
 
 ### CI/CD
 

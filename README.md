@@ -6,13 +6,13 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-This chart currently targets cfgate `0.2.0-alpha.2`.
+This chart currently targets cfgate `0.2.0-alpha.3`.
 
-The current cfgate surface managed by this chart keeps `CloudflareAccessPolicy` scoped to `Gateway` and `HTTPRoute`. Access mTLS support and retired route kinds are not part of the shipped product surface.
+The current cfgate surface managed by this chart includes separate `CloudflareAccessApplication` and `CloudflareAccessPolicy` CRDs for Access application and policy lifecycle management.
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
-- CRDs (CloudflareTunnel, CloudflareDNS, CloudflareAccessPolicy)
+- CRDs (CloudflareTunnel, CloudflareDNS, CloudflareAccessApplication, CloudflareAccessPolicy)
 - ClusterRole and ClusterRoleBinding
 - ServiceAccount
 - Metrics Service (optional ServiceMonitor for Prometheus)
@@ -24,7 +24,7 @@ The chart deploys:
 - Gateway API CRDs installed:
 
 ```bash
-kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.1/standard-install.yaml
+kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
 ```
 
 Gateway API CRDs are a cluster-level prerequisite, not a chart dependency. They may already be installed if you run Istio, Cilium, Envoy Gateway, or another Gateway API implementation.
@@ -49,11 +49,12 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
 helm uninstall cfgate --namespace cfgate-system
 ```
 
-CRDs are not deleted on uninstall (annotated with `helm.sh/resource-policy: keep`). This prevents accidental deletion of all CloudflareTunnel, CloudflareDNS, and CloudflareAccessPolicy resources in the cluster. To remove CRDs manually:
+CRDs are not deleted on uninstall (annotated with `helm.sh/resource-policy: keep`). This prevents accidental deletion of all CloudflareTunnel, CloudflareDNS, CloudflareAccessApplication, and CloudflareAccessPolicy resources in the cluster. To remove CRDs manually:
 
 ```bash
 kubectl delete crd cloudflaretunnels.cfgate.io
 kubectl delete crd cloudflarednses.cfgate.io
+kubectl delete crd cloudflareaccessapplications.cfgate.io
 kubectl delete crd cloudflareaccesspolicies.cfgate.io
 ```
 
@@ -164,7 +165,7 @@ metrics:
 ## Next Steps
 
 After installing the chart, see the [cfgate documentation](https://github.com/cfgate/cfgate) for:
-- Creating CloudflareTunnel, CloudflareDNS, and CloudflareAccessPolicy resources
+- Creating CloudflareTunnel, CloudflareDNS, CloudflareAccessApplication, and CloudflareAccessPolicy resources
 - Setting up Gateway API GatewayClass and Gateway
 - Configuring HTTPRoute annotations for per-route origin settings
 - Multi-zone DNS configuration
