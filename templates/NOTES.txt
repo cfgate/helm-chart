@@ -8,6 +8,7 @@ App version: {{ .Chart.AppVersion }}
 CRDs installed:
   - cloudflaretunnels.cfgate.io
   - cloudflarednses.cfgate.io
+  - cloudflareaccessapplications.cfgate.io
   - cloudflareaccesspolicies.cfgate.io
 
 Note: CRDs have "helm.sh/resource-policy: keep" annotation and will not be
@@ -15,6 +16,7 @@ deleted when the chart is uninstalled. To remove CRDs manually:
 
   kubectl delete crd cloudflaretunnels.cfgate.io
   kubectl delete crd cloudflarednses.cfgate.io
+  kubectl delete crd cloudflareaccessapplications.cfgate.io
   kubectl delete crd cloudflareaccesspolicies.cfgate.io
 
 {{- end }}
