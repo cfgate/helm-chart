@@ -3,6 +3,16 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
+## [1.3.1] - 2026-05-18
+
+### Maintenance
+
+- **(deps)** Update sigstore/cosign-installer action to v4.1.2
+
+### Other
+
+- Target cfgate 0.2.0-alpha.4
+
 ## [1.3.0] - 2026-05-15
 
 ### Features
