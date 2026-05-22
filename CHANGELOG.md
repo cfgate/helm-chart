@@ -3,6 +3,12 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
+## [1.4.0] - 2026-05-22
+
+### Other
+
+- Sync cfgate 0.2.0-alpha.5 CRDs
+
 ## [1.3.1] - 2026-05-18
 
 ### Maintenance
