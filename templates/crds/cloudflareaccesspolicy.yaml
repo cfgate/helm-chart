@@ -224,13 +224,15 @@ spec:
                           maxLength: 36
                           type: string
                         name:
-                          description: Name of the Access list (looked up via API).
+                          description: |-
+                            Name is not supported for lookup in v1alpha1. Specify id instead.
+                            Deprecated: use id.
                           maxLength: 255
                           type: string
                       type: object
                       x-kubernetes-validations:
-                      - message: either id or name must be specified
-                        rule: has(self.id) || has(self.name)
+                      - message: id must be specified
+                        rule: has(self.id)
                     everyone:
                       description: |-
                         Everyone matches all users (use with caution).
@@ -293,13 +295,15 @@ spec:
                           maxLength: 36
                           type: string
                         name:
-                          description: Name of the IP list (looked up via API).
+                          description: |-
+                            Name is not supported for lookup in v1alpha1. Specify id instead.
+                            Deprecated: use id.
                           maxLength: 255
                           type: string
                       type: object
                       x-kubernetes-validations:
-                      - message: either id or name must be specified
-                        rule: has(self.id) || has(self.name)
+                      - message: id must be specified
+                        rule: has(self.id)
                     oidcClaim:
                       description: |-
                         OIDCClaim matches OIDC token claims.
@@ -346,11 +350,12 @@ spec:
                         rule: has(self.tokenId) || has(self.name)
                   type: object
                   x-kubernetes-validations:
-                  - message: at least one rule type must be specified
+                  - message: exactly one rule type must be specified
                     rule: '[has(self.ip), has(self.ipList), has(self.country), has(self.everyone),
                       has(self.serviceToken), has(self.anyValidServiceToken), has(self.email),
                       has(self.emailList), has(self.emailDomain), has(self.oidcClaim),
-                      has(self.gsuiteGroup), has(self.group)].exists(x, x)'
+                      has(self.gsuiteGroup), has(self.group)].filter(x, x).size()
+                      == 1'
                 maxItems: 25
                 type: array
               include:
@@ -430,13 +435,15 @@ spec:
                           maxLength: 36
                           type: string
                         name:
-                          description: Name of the Access list (looked up via API).
+                          description: |-
+                            Name is not supported for lookup in v1alpha1. Specify id instead.
+                            Deprecated: use id.
                           maxLength: 255
                           type: string
                       type: object
                       x-kubernetes-validations:
-                      - message: either id or name must be specified
-                        rule: has(self.id) || has(self.name)
+                      - message: id must be specified
+                        rule: has(self.id)
                     everyone:
                       description: |-
                         Everyone matches all users (use with caution).
@@ -499,13 +506,15 @@ spec:
                           maxLength: 36
                           type: string
                         name:
-                          description: Name of the IP list (looked up via API).
+                          description: |-
+                            Name is not supported for lookup in v1alpha1. Specify id instead.
+                            Deprecated: use id.
                           maxLength: 255
                           type: string
                       type: object
                       x-kubernetes-validations:
-                      - message: either id or name must be specified
-                        rule: has(self.id) || has(self.name)
+                      - message: id must be specified
+                        rule: has(self.id)
                     oidcClaim:
                       description: |-
                         OIDCClaim matches OIDC token claims.
@@ -552,11 +561,12 @@ spec:
                         rule: has(self.tokenId) || has(self.name)
                   type: object
                   x-kubernetes-validations:
-                  - message: at least one rule type must be specified
+                  - message: exactly one rule type must be specified
                     rule: '[has(self.ip), has(self.ipList), has(self.country), has(self.everyone),
                       has(self.serviceToken), has(self.anyValidServiceToken), has(self.email),
                       has(self.emailList), has(self.emailDomain), has(self.oidcClaim),
-                      has(self.gsuiteGroup), has(self.group)].exists(x, x)'
+                      has(self.gsuiteGroup), has(self.group)].filter(x, x).size()
+                      == 1'
                 maxItems: 25
                 minItems: 1
                 type: array
@@ -651,13 +661,15 @@ spec:
                           maxLength: 36
                           type: string
                         name:
-                          description: Name of the Access list (looked up via API).
+                          description: |-
+                            Name is not supported for lookup in v1alpha1. Specify id instead.
+                            Deprecated: use id.
                           maxLength: 255
                           type: string
                       type: object
                       x-kubernetes-validations:
-                      - message: either id or name must be specified
-                        rule: has(self.id) || has(self.name)
+                      - message: id must be specified
+                        rule: has(self.id)
                     everyone:
                       description: |-
                         Everyone matches all users (use with caution).
@@ -720,13 +732,15 @@ spec:
                           maxLength: 36
                           type: string
                         name:
-                          description: Name of the IP list (looked up via API).
+                          description: |-
+                            Name is not supported for lookup in v1alpha1. Specify id instead.
+                            Deprecated: use id.
                           maxLength: 255
                           type: string
                       type: object
                       x-kubernetes-validations:
-                      - message: either id or name must be specified
-                        rule: has(self.id) || has(self.name)
+                      - message: id must be specified
+                        rule: has(self.id)
                     oidcClaim:
                       description: |-
                         OIDCClaim matches OIDC token claims.
@@ -773,11 +787,12 @@ spec:
                         rule: has(self.tokenId) || has(self.name)
                   type: object
                   x-kubernetes-validations:
-                  - message: at least one rule type must be specified
+                  - message: exactly one rule type must be specified
                     rule: '[has(self.ip), has(self.ipList), has(self.country), has(self.everyone),
                       has(self.serviceToken), has(self.anyValidServiceToken), has(self.email),
                       has(self.emailList), has(self.emailDomain), has(self.oidcClaim),
-                      has(self.gsuiteGroup), has(self.group)].exists(x, x)'
+                      has(self.gsuiteGroup), has(self.group)].filter(x, x).size()
+                      == 1'
                 maxItems: 25
                 type: array
               serviceTokens:
