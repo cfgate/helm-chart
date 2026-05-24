@@ -3,11 +3,16 @@
 All notable changes to the cfgate Helm chart are documented in this file.
 
 
-## [1.4.0] - 2026-05-22
+## [1.4.0] - 2026-05-24
+
+### Documentation
+
+- Document alpha.5 upgrade risks
 
 ### Other
 
-- Sync cfgate 0.2.0-alpha.5 CRDs
+- Target cfgate 0.2.0-alpha.5
+- Finish alpha.5 CRD sync
 
 ## [1.3.1] - 2026-05-18
 
