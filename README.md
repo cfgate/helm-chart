@@ -43,6 +43,18 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
+### Upgrade from 1.3.1 to 1.4.0
+
+Chart 1.4.0 installs cfgate `0.2.0-alpha.5` CRDs with stricter validation.
+Before upgrading existing clusters:
+
+- Change any `CloudflareAccessApplication.spec.application.type` value other than `self_hosted` to `self_hosted`.
+- Split any `CloudflareAccessPolicy` rule entry that sets multiple matcher types into separate rule entries.
+- Replace `CloudflareAccessPolicy` `emailList.name` and `ipList.name` references with Cloudflare list IDs.
+- Update alerts or automation keyed on old condition names:
+  - `CloudflareDNS`: use `ZonesResolved`, `RecordsSynced`, and `OwnershipVerified`.
+  - `CloudflareTunnel`: use `TunnelReady` and `CloudflaredDeployed`.
+
 ## Uninstall
 
 ```bash
