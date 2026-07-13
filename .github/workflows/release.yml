@@ -65,7 +65,7 @@ jobs:
       - name: Sign chart
         run: cosign sign --yes ${{ env.CHART_REF }}@${{ steps.push.outputs.digest }}
 
-      - uses: oras-project/setup-oras@v2.0.0
+      - uses: oras-project/setup-oras@v2.0.1
 
       - name: Tag latest
         run: |
