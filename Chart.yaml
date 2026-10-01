@@ -2,8 +2,8 @@ apiVersion: v2
 name: cfgate
 description: Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access
 type: application
-version: 1.4.0
-appVersion: "0.2.0-alpha.5"
+version: 1.5.0
+appVersion: "0.2.0-alpha.6"
 kubeVersion: ">= 1.26.0-0"
 
 keywords:

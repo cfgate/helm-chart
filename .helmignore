@@ -1,7 +1,7 @@
 # Patterns to ignore when building packages.
 .DS_Store
 # Common VCS dirs
-.git/
+.git
 .gitignore
 .bzr/
 .bzrignore
@@ -21,5 +21,8 @@
 .vscode/
 # CI/CD
 ci/
+.github/
+# Local release output must never be repackaged into the chart.
+dist/
 # Helm
 .helmignore

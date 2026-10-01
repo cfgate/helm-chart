@@ -1,7 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["image"],
+  "required": [
+    "image"
+  ],
   "properties": {
     "replicaCount": {
       "type": "integer",
@@ -11,7 +13,9 @@
     },
     "image": {
       "type": "object",
-      "required": ["repository"],
+      "required": [
+        "repository"
+      ],
       "properties": {
         "repository": {
           "type": "string",
@@ -23,7 +27,11 @@
         },
         "pullPolicy": {
           "type": "string",
-          "enum": ["Always", "Never", "IfNotPresent"],
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ],
           "default": "IfNotPresent",
           "description": "Image pull policy"
         }
@@ -248,6 +256,48 @@
       },
       "default": {},
       "description": "Pod labels"
+    },
+    "controller": {
+      "type": "object",
+      "description": "Additive manager settings; defaults preserve the controller defaults",
+      "properties": {
+        "clusterDomain": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 253,
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$",
+          "default": "cluster.local",
+          "description": "Canonical Kubernetes cluster DNS suffix without a trailing dot"
+        },
+        "installationNamespace": {
+          "type": "string",
+          "maxLength": 63,
+          "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$",
+          "default": "",
+          "description": "Empty uses POD_NAMESPACE; changing this changes installation ownership identity"
+        },
+        "cloudflareRequestTimeoutSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9223372036,
+          "default": 30,
+          "description": "Positive whole seconds per Cloudflare API attempt"
+        },
+        "maxIngressRules": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "default": 1000,
+          "description": "Aggregate tunnel rule limit including fallback"
+        },
+        "maxConfigurationBytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "default": 1048576,
+          "description": "Maximum serialized tunnel configuration bytes"
+        }
+      }
     }
   }
 }

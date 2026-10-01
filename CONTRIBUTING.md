@@ -42,7 +42,14 @@ CRDs in `templates/crds/` are templated versions of the generated CRDs.
        {{- include "cfgate.labels" . | nindent 4 }}
      ```
 
-3. Write to `templates/crds/{resource-name}.yaml`
+3. Escape literal template examples in generated descriptions before adding the
+   chart wrapper. Use the Helm raw-string expression in
+   `templates/crds/cloudflaredns.yaml` as the example; the rendered CRD must
+   still contain the exact literal `{{ .TunnelDomain }}`.
+
+4. Write to `templates/crds/{resource-name}.yaml` and compare the rendered `spec`
+   with the source. Keep all four matching schemas, including status fields used
+   for credential cleanup, ownership and Access publication receipts.
 
 ### Regenerating RBAC
 
@@ -64,7 +71,10 @@ When `config/manager/manager.yaml` changes:
 
 1. Compare container args, ports, probes, security context
 2. Update `templates/deployment.yaml` accordingly
-3. Update `values.yaml` if new configurable options added
+3. Update `values.yaml`, `values.schema.json` and README when configurable options are added
+4. Preserve the `POD_NAMESPACE` downward API and `enableServiceLinks: false`
+5. Compare default and overridden flags with the matching manager source; do not
+   infer Kubernetes support from the chart admission floor or client-library version
 
 ### Updating NOTES.txt
 
@@ -109,8 +119,7 @@ Update `Chart.yaml`:
 
 `CHANGELOG.md` is generated from git history via `git-cliff`.
 
-- regenerate it locally when preparing chart releases or housekeeping updates
-- do not hand-edit release entries
+The release workflow generates GitHub release notes with `git-cliff --latest --strip header`. Keep upgrade instructions in README and link historical migration guidance to its release tag; do not duplicate those instructions as handwritten changelog entries. Regenerate `CHANGELOG.md` from tagged history when refreshing that tracked snapshot, rather than adding an unreleased version manually.
 
 ### CI Integration
 
@@ -119,3 +128,27 @@ Chart changes should pass:
 - `helm lint`
 - `helm template` with default values
 - `helm template` with `ci/default-values.yaml`
+- `helm template` with external CRDs/RBAC disabled
+- `python3 -m unittest discover -s .github/scripts -p 'test_*.py' -v`
+
+### Ordered publication
+
+The chart release workflow checks the immutable tag source and chart version,
+then requires the exact `appVersion` to have a published, non-draft cfgate release.
+Prerelease operators are permitted. The available operator OCI digest must have
+a GitHub attestation from cfgate's release workflow for that source commit and tag.
+Verification reads the attestation bundle from OCI, avoiding a cross-repository
+attestation API permission requirement for the chart's workflow token.
+The connector pin is read from this verified operator source; its fork release
+and image must also exist before any chart push. Missing evidence stops release.
+This records the fork image's available digest; it does not independently attest
+the fork image's source. Source and dependencies are rechecked immediately before
+publication.
+
+The workflow records these source commits and image digests in
+`release-dependencies.json`, attached beside the chart package. It signs the
+verified pushed chart digest and points `latest` at that digest. Chart publication
+must follow the operator release, including any required operator review gate.
+Local packaging excludes `dist/` to avoid including earlier release output.
+The `.git` exclusion covers both a checkout's Git directory and a worktree's Git
+pointer file. Inspect the packaged archive when changing `.helmignore`.

@@ -3,6 +3,11 @@ cfgate has been installed.
 Chart version: {{ .Chart.Version }}
 App version: {{ .Chart.AppVersion }}
 
+Gateway API CRDs are an external prerequisite; this chart does not install them.
+Before upgrading from 1.4.0, complete the ownership/grant migration in README.md.
+Preserve the installation namespace and install all four matching CRD schemas
+before the new controller runs, including Access dependency status fields.
+
 {{- if .Values.installCRDs }}
 
 CRDs installed:
@@ -20,6 +25,12 @@ deleted when the chart is uninstalled. To remove CRDs manually:
   kubectl delete crd cloudflareaccesspolicies.cfgate.io
 
 {{- end }}
+
+Installation identity defaults to the actual Pod namespace (POD_NAMESPACE).
+Changing its namespace UID or controller.installationNamespace requires migration.
+Cross-namespace credential and resource references require target ReferenceGrants.
+The manager requires its service-account token for Kubernetes API access.
+Access-required routing is opt-in; strict authentication still belongs at the origin.
 
 To verify the controller is running:
 

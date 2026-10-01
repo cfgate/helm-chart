@@ -5,6 +5,13 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: chart-release
+  cancel-in-progress: false
+
 env:
   REGISTRY: ghcr.io
   CHART_REF: ghcr.io/cfgate/charts/cfgate
@@ -19,58 +26,84 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ github.sha }}
 
-      - id: version
-        run: echo "clean=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
-      - uses: azure/setup-helm@v5.0.0
+      - uses: azure/setup-helm@v5.0.1
         with:
-          version: v4.1.4
+          version: v4.3.0
 
-      - name: Validate chart version matches tag
-        run: |
-          CHART_VERSION="$(awk '/^version:/ {print $2; exit}' Chart.yaml)"
-          TAG_VERSION="${{ steps.version.outputs.clean }}"
-          if [ "$CHART_VERSION" != "$TAG_VERSION" ]; then
-            echo "::error::Chart.yaml version ($CHART_VERSION) must match release tag ($TAG_VERSION)"
-            exit 1
-          fi
+      - uses: oras-project/setup-oras@v2.0.2
 
-      - name: Lint chart
-        run: helm lint .
-
-      - name: Package chart
-        run: helm package . -d dist/
-
-      - name: Push chart to GHCR
-        id: push
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-          OUTPUT=$(helm push dist/cfgate-*.tgz oci://ghcr.io/cfgate/charts 2>&1)
-          echo "$OUTPUT"
-          DIGEST=$(echo "$OUTPUT" | grep -oP 'sha256:[a-f0-9]+')
-          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
-
-      - uses: docker/login-action@v4.1.0
+      - uses: docker/login-action@v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Verify published operator and connector dependencies
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 .github/scripts/release_guard.py
+          cp dist/release-dependencies.json "$RUNNER_TEMP/chart-release-dependencies.json"
+
+      - name: Test release dependency guards
+        run: python3 -m unittest discover -s .github/scripts -p "test_*.py" -v
+
+      - name: Lint chart
+        run: |
+          helm lint .
+          helm template cfgate . > /dev/null
+          helm template cfgate . -f ci/default-values.yaml > /dev/null
+          helm template cfgate . --set installCRDs=false --set rbac.create=false > /dev/null
+
+      - name: Package chart
+        run: helm package . -d dist/
+
+      - name: Recheck source and dependencies immediately before publication
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 .github/scripts/release_guard.py
+          if ! cmp -s "$RUNNER_TEMP/chart-release-dependencies.json" dist/release-dependencies.json; then
+            echo "::error::Published dependencies changed during validation"
+            exit 1
+          fi
+
+      - name: Push chart to GHCR
+        id: push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.version.outputs.clean }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | helm registry login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          OUTPUT=$(helm push "dist/cfgate-$RELEASE_VERSION.tgz" oci://ghcr.io/cfgate/charts 2>&1)
+          printf '%s\n' "$OUTPUT"
+          DIGEST=$(printf '%s\n' "$OUTPUT" | sed -nE 's/^Digest: (sha256:[a-f0-9]{64})$/\1/p')
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          test "$(oras resolve "$CHART_REF:$RELEASE_VERSION")" = "$DIGEST"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
       - uses: sigstore/cosign-installer@v4.1.2
 
       - name: Sign chart
-        run: cosign sign --yes ${{ env.CHART_REF }}@${{ steps.push.outputs.digest }}
-
-      - uses: oras-project/setup-oras@v2.0.0
+        env:
+          CHART_DIGEST: ${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "$CHART_REF@$CHART_DIGEST"
 
       - name: Tag latest
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u ${{ github.actor }} --password-stdin
-          oras tag ${{ env.CHART_REF }}:${{ steps.version.outputs.clean }} latest
+        env:
+          CHART_DIGEST: ${{ steps.push.outputs.digest }}
+        run: oras tag "$CHART_REF@$CHART_DIGEST" latest
 
       - name: Generate release notes
         id: changelog
@@ -81,15 +114,17 @@ jobs:
         env:
           GITHUB_REPO: ${{ github.repository }}
 
-      - uses: softprops/action-gh-release@v3.0.0
+      - uses: softprops/action-gh-release@v3.0.3
         with:
           body: ${{ steps.changelog.outputs.content }}
-          files: dist/cfgate-*.tgz
+          files: |
+            dist/cfgate-*.tgz
+            dist/release-dependencies.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Artifact Hub metadata
         run: |
-          oras push ${{ env.CHART_REF }}:artifacthub.io \
+          oras push "$CHART_REF:artifacthub.io" \
             --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
             artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
