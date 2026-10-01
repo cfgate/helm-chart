@@ -8,18 +8,16 @@ Installs the cfgate controller, a Gateway API-native Kubernetes operator for Clo
 
 Chart `1.5.0` installs cfgate [`0.2.0-alpha.6`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.6).
 
-The current cfgate surface managed by this chart includes separate `CloudflareAccessApplication` and `CloudflareAccessPolicy` CRDs for Access application and policy lifecycle management.
-
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
 - CRDs (CloudflareTunnel, CloudflareDNS, CloudflareAccessApplication, CloudflareAccessPolicy)
-- ClusterRole and ClusterRoleBinding
+- Manager ClusterRole/Binding and namespaced claim Role/Binding
 - ServiceAccount
 - Metrics Service (optional ServiceMonitor for Prometheus)
 
 ## Prerequisites
 
-- Kubernetes compatible with the installed Gateway API bundle. The upstream standard bundle used below requires Kubernetes 1.30 or later; this API minimum is not a cfgate-tested support range.
+- Kubernetes 1.30 or later for the Gateway API bundle below.
 - Helm 3.x or 4.x
 - Gateway API CRDs installed:
 
@@ -29,7 +27,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 
 Gateway API CRDs are a cluster-level prerequisite, not a chart dependency. They may already be installed if you run Istio, Cilium, Envoy Gateway, or another Gateway API implementation.
 
-The chart's historical `kubeVersion: ">= 1.26.0-0"` controls Helm admission for its own templates; it does not certify the complete controller and Gateway API stack on Kubernetes 1.26. Upstream [Gateway API installation requirements](https://kubernetes.io/blog/2026/04/21/gateway-api-v1-5/) and the [tested configuration below](#release-validation) are separate checks.
+The chart's `kubeVersion` floor applies to its templates. The installed Gateway API bundle may require a newer Kubernetes version, as shown above.
 
 ## Install
 
@@ -51,24 +49,12 @@ Chart 1.4.0 → 1.5.0 upgrades cfgate `0.2.0-alpha.5` → `0.2.0-alpha.6`. Exist
 
 - no values change is needed for #85; the chart disables Service environment injection and the controller fixes configuration precedence
 - if `image.tag` is explicitly set, clear it to use the chart's verified image pin, or update it to `0.2.0-alpha.6` to keep tag-based selection
-- if `installCRDs=false` or `rbac.create=false`, update the externally managed CRDs and RBAC to alpha.6 before rollout
+- if `installCRDs=false` or `rbac.create=false`, update the external CRDs and provide the chart's [required RBAC](#crds-and-rbac) before rollout
 - cross-namespace references now require the applicable `ReferenceGrant`
 - existing tunnels, DNS records, and generated resources must satisfy stricter ownership checks; preserve the installation namespace and follow the migration guide before adopting legacy resources
 - to hold routes closed until Access is ready, set `cfgate.io/access-required`; intentionally public routes need no change
 
 See the [alpha.5 → alpha.6 migration guide](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.6/docs/authorization-and-ownership.md#upgrade-from-v020-alpha5-to-v020-alpha6) for adoption, DNS ownership, and authorization details.
-
-### Release validation
-
-The four rendered CRD specifications match released cfgate source `b8cb740` and its published release assets. Manager RBAC retains the required operations while narrowing ConfigMap access to the installation namespace. The published image's GitHub provenance verifies against `v0.2.0-alpha.6` and that source commit. The bundled connector default is `ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1`.
-
-A disposable ARM64 kind cluster running Kubernetes 1.37.0 and Gateway API 1.6.2 passed a chart 1.4.0 → 1.5.0 upgrade using Helm 4.3.0 and `--reuse-values`. The old controller reproduced #85; the published alpha.6 image became Ready, preserved custom metrics/health ports, and passed a rollout restart. Installed CRD schemas, origin-setting validation, and the manager's service-account token were checked.
-
-After adding the default digest pin, the packaged chart passed another 1.4.0 →
-1.5.0 upgrade on that configuration: reused values were unchanged, the Deployment
-selected the pinned image, and the controller became Ready with the custom ports.
-
-The tested operator index digest was `sha256:3d3eaeae0ae0a76f8b3bc5271f642cf06f42e6525c85cb16e1b778fb4d864d6a`. This chart check created no Cloudflare resources and does not establish a Kubernetes support range. The controller's separate [release run](https://github.com/cfgate/cfgate/actions/runs/36822793906) passed all 119 live E2E tests and both architecture scans.
 
 For installations older than chart 1.4.0, first follow the [historical 1.4.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.4.0/README.md#upgrade-from-131-to-140), then apply the upgrade above.
 
@@ -256,46 +242,8 @@ After installing the chart, see the [cfgate documentation](https://github.com/cf
 
 ## Artifact Hub
 
-This chart is published to [Artifact Hub](https://artifacthub.io/) via OCI at `oci://ghcr.io/cfgate/charts/cfgate`.
-
-### Prerelease Annotations
-
-Chart.yaml includes Artifact Hub annotations that control how the chart appears in search results:
-
-| Annotation | Value | Purpose |
-|-----------|-------|---------|
-| `artifacthub.io/prerelease` | `"true"` or `"false"` | Marks chart as prerelease in Artifact Hub UI |
-| `artifacthub.io/license` | `Apache-2.0` | SPDX license identifier |
-| `artifacthub.io/category` | `networking` | Artifact Hub category filter |
-| `artifacthub.io/operator` | `"true"` | Flags chart as a Kubernetes operator |
-| `artifacthub.io/operatorCapabilities` | `Basic Install` | Operator maturity level |
-| `artifacthub.io/images` | (YAML list) | Container images used by the chart |
-
-### Release Transitions
-
-When moving between release stages, update `Chart.yaml` annotations:
-
-**Alpha/Beta builds** (`appVersion: "0.0.0-alpha.1"`):
-```yaml
-artifacthub.io/prerelease: "true"
-```
-
-**Release candidates** (`appVersion: "0.0.0-rc.1"`):
-```yaml
-artifacthub.io/prerelease: "true"
-```
-
-**Stable releases** (`appVersion: "0.0.0"`):
-```yaml
-artifacthub.io/prerelease: "false"
-```
-
-Update `Chart.yaml` manually before tagging:
-- set `version` to match the release tag without the leading `v`
-- set `appVersion` to the cfgate version the chart targets
-- set `artifacthub.io/prerelease` appropriately for prerelease vs stable publication
-
-The release workflow validates that the tag matches `Chart.yaml version`, but it does not rewrite chart metadata for you.
+The chart is published at `oci://ghcr.io/cfgate/charts/cfgate` and listed on
+[Artifact Hub](https://artifacthub.io/packages/helm/helm-chart-cfgate/cfgate).
 
 ## Chart Development
 
