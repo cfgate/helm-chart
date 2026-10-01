@@ -1,0 +1,13 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "cfgate.fullname" . }}-claims
+  namespace: {{ include "cfgate.installationNamespace" . }}
+  labels:
+    {{- include "cfgate.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "delete"]
+{{- end }}
