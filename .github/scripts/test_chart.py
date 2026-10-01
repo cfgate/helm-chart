@@ -98,8 +98,31 @@ class ChartTests(unittest.TestCase):
     def test_external_crds_and_rbac(self):
         result = self.render({"installCRDs": False, "rbac": {"create": False}}, deployment=False)
         self.assertEqual(result.returncode, 0, result.stderr)
-        for kind in ['CustomResourceDefinition', 'ClusterRole', 'ClusterRoleBinding']:
+        for kind in ['CustomResourceDefinition', 'ClusterRole', 'ClusterRoleBinding', 'Role', 'RoleBinding']:
             self.assertNotIn('kind: ' + kind + '\n', result.stdout)
+
+    def test_claim_permissions_follow_installation_namespace(self):
+        for values, namespace, account_namespace, account in [
+            ({}, 'manager', 'manager', 'cfgate'),
+            ({'namespaceOverride': 'workloads'}, 'workloads', 'workloads', 'cfgate'),
+            ({'controller': None}, 'manager', 'manager', 'cfgate'),
+            ({'namespaceOverride': 'workloads', 'controller': {'installationNamespace': 'claims'},
+              'serviceAccount': {'create': False, 'name': 'external-manager'}},
+             'claims', 'workloads', 'external-manager'),
+        ]:
+            with self.subTest(values=values):
+                result = self.render(values, deployment=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                docs = {re.search(r'^kind: (\S+)$', doc, re.M)[1]: doc
+                        for doc in result.stdout.split('---') if re.search(r'^kind: (\S+)$', doc, re.M)}
+                self.assertNotIn('configmaps', docs['ClusterRole'])
+                role, binding = docs['Role'], docs['RoleBinding']
+                self.assertIn('  namespace: ' + namespace + '\n', role)
+                self.assertIn('  namespace: ' + namespace + '\n', binding)
+                self.assertIn('resources: ["configmaps"]', role)
+                self.assertIn('verbs: ["get", "create", "delete"]', role)
+                self.assertIn('  kind: Role\n  name: cfgate-claims', binding)
+                self.assertIn('name: ' + account + '\n    namespace: ' + account_namespace, binding)
 
     def test_invalid_values_rejected(self):
         for values in [

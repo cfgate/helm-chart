@@ -9,14 +9,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  verbs:
-  - create
-  - delete
-  - get
-- apiGroups:
-  - ""
-  resources:
   - namespaces
   - pods
   - services

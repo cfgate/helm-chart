@@ -60,7 +60,7 @@ See the [alpha.5 → alpha.6 migration guide](https://github.com/cfgate/cfgate/b
 
 ### Release validation
 
-The four rendered CRD specifications and manager RBAC match released cfgate source `b8cb740`; the CRD specifications also match its published release assets. The published image's GitHub provenance verifies against `v0.2.0-alpha.6` and that source commit. The bundled connector default is `ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1`.
+The four rendered CRD specifications match released cfgate source `b8cb740` and its published release assets. Manager RBAC retains the required operations while narrowing ConfigMap access to the installation namespace. The published image's GitHub provenance verifies against `v0.2.0-alpha.6` and that source commit. The bundled connector default is `ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1`.
 
 A disposable ARM64 kind cluster running Kubernetes 1.37.0 and Gateway API 1.6.2 passed a chart 1.4.0 → 1.5.0 upgrade using Helm 4.3.0 and `--reuse-values`. The old controller reproduced #85; the published alpha.6 image became Ready, preserved custom metrics/health ports, and passed a rollout restart. Installed CRD schemas, origin-setting validation, and the manager's service-account token were checked.
 
@@ -144,12 +144,26 @@ controller:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `installCRDs` | bool | `true` | Install CRDs with the chart |
-| `rbac.create` | bool | `true` | Create ClusterRole and ClusterRoleBinding |
+| `rbac.create` | bool | `true` | Create manager ClusterRole/Binding and installation claim Role/Binding |
 | `serviceAccount.create` | bool | `true` | Create ServiceAccount |
 | `serviceAccount.name` | string | `""` | ServiceAccount name (generated if empty) |
 | `serviceAccount.annotations` | object | `{}` | ServiceAccount annotations |
 
-The manager ClusterRole includes `get/create/delete` on ConfigMaps for immutable installation tunnel claims, and `get/list/watch` on Pods for connector drain checks. These permissions are part of the matching controller RBAC; when `rbac.create=false`, provide equivalent administrator-managed rules. Do not disable the manager's service-account token: it needs Kubernetes API access. Connector Pods independently disable unused token mounting.
+The manager's namespaced claim Role grants `get/create/delete` on ConfigMaps in
+`controller.installationNamespace`, or the actual manager namespace when unset.
+Its RoleBinding targets the manager's service account, even when the claim
+namespace differs. A custom installation namespace must already exist. The
+ClusterRole retains `get/list/watch` on Pods for connector drain checks, but
+grants no ConfigMap access.
+
+When `rbac.create=false`, supply both the cluster-wide manager permissions and
+the namespaced claim permissions yourself. Remove any previous cluster-wide
+ConfigMap grant; adding a namespaced Role alone does not revoke it. This scopes
+ConfigMap access to a namespace, not individual claims, and leaves other required
+manager permissions unchanged. No CRD or controller-image update is needed for
+this RBAC restriction. Do not disable the manager's service-account token: it
+needs Kubernetes API access. Connector Pods independently disable unused token
+mounting.
 
 Access-required routing remains an explicit per-HTTPRoute opt-in (`cfgate.io/access-required: namespace/name`), not a chart-wide setting. Its dependency receipts are included in the Tunnel CRD. The selected tunnel credential needs Access application/policy read permissions. See the [Access-required contract and limits](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.6/docs/access-required.md); edge configuration is asynchronous, and strict or gRPC authentication requires origin-side enforcement.
 

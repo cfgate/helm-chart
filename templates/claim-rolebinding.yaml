@@ -1,0 +1,17 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "cfgate.fullname" . }}-claims
+  namespace: {{ include "cfgate.installationNamespace" . }}
+  labels:
+    {{- include "cfgate.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "cfgate.fullname" . }}-claims
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "cfgate.serviceAccountName" . }}
+    namespace: {{ include "cfgate.namespace" . }}
+{{- end }}

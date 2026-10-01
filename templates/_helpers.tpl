@@ -60,6 +60,12 @@ Define namespace (supports override for multi-namespace deployments).
 {{- end }}
 {{- end }}
 
+{{/* Keep claim permissions in the namespace selected by the manager. */}}
+{{- define "cfgate.installationNamespace" -}}
+{{- $controller := .Values.controller | default dict -}}
+{{- default (include "cfgate.namespace" .) $controller.installationNamespace -}}
+{{- end -}}
+
 {{/*
 Common labels
 */}}
