@@ -53,7 +53,7 @@ jobs:
           python3 .github/scripts/release_guard.py
           cp dist/release-dependencies.json "$RUNNER_TEMP/chart-release-dependencies.json"
 
-      - name: Test release dependency guards
+      - name: Test chart contracts and release guards
         run: python3 -m unittest discover -s .github/scripts -p "test_*.py" -v
 
       - name: Lint chart
@@ -68,11 +68,12 @@ jobs:
 
       - name: Recheck source and dependencies immediately before publication
         env:
+          RELEASE_VERSION: ${{ steps.version.outputs.clean }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_SHA: ${{ github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python3 .github/scripts/release_guard.py
+          python3 .github/scripts/release_guard.py --package "dist/cfgate-$RELEASE_VERSION.tgz"
           if ! cmp -s "$RUNNER_TEMP/chart-release-dependencies.json" dist/release-dependencies.json; then
             echo "::error::Published dependencies changed during validation"
             exit 1

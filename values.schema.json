@@ -23,7 +23,12 @@
         },
         "tag": {
           "type": "string",
-          "description": "Container image tag (defaults to Chart.AppVersion)"
+          "description": "Explicit tag opts out of the chart default digest; custom repositories default to Chart.AppVersion"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^(sha256:[a-f0-9]{64})?$",
+          "description": "Optional image digest; takes precedence over tag"
         },
         "pullPolicy": {
           "type": "string",

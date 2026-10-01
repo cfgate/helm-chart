@@ -6,6 +6,25 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Pin the default operator to the chart-owned digest, not a value retained by
+--reuse-values. Explicit repository/tag overrides preserve existing behavior.
+*/}}
+{{- define "cfgate.image" -}}
+{{- $digest := .Values.image.digest | default "" -}}
+{{- if and (not $digest) (eq .Values.image.repository "ghcr.io/cfgate/cfgate") (not .Values.image.tag) -}}
+{{- $digest = required "chart operator image digest is required" (index .Chart.Annotations "cfgate.io/operator-image-digest") -}}
+{{- end -}}
+{{- if $digest -}}
+{{- if not (regexMatch "^sha256:[a-f0-9]{64}$" $digest) -}}
+{{- fail "operator image digest must be sha256 followed by 64 lowercase hex characters" -}}
+{{- end -}}
+{{- printf "%s@%s" .Values.image.repository $digest -}}
+{{- else -}}
+{{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion) -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
@@ -73,4 +92,3 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-

@@ -15,7 +15,8 @@ class ReleaseGuardTests(unittest.TestCase):
             ("git", "rev-parse", "HEAD"): self.sha,
             ("git", "rev-parse", "refs/tags/v1.5.0^{commit}"): self.sha,
             ("git", "ls-remote", "--tags", "origin", "refs/tags/v1.5.0", "refs/tags/v1.5.0^{}"): self.sha + "\trefs/tags/v1.5.0",
-            ("helm", "show", "chart", "."): 'version: 1.5.0\nappVersion: "0.2.0-alpha.6"',
+            ("helm", "show", "chart", "."): 'version: 1.5.0\nappVersion: "0.2.0-alpha.6"\nannotations:\n  cfgate.io/operator-image-digest: ' + self.digest,
+            ("helm", "template", "cfgate", ".", "--show-only", "templates/deployment.yaml"): '          image: "ghcr.io/cfgate/cfgate@' + self.digest + '"',
             ("oras", "resolve", "ghcr.io/cfgate/cfgate:0.2.0-alpha.6"): self.digest,
             ("oras", "resolve", "ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1"): self.digest,
         }
@@ -42,9 +43,35 @@ class ReleaseGuardTests(unittest.TestCase):
             return "verified"
         return self.responses[args]
 
-    def verify(self, tag="v1.5.0", sha=None):
+    def verify(self, tag="v1.5.0", sha=None, package=None):
         with patch.object(guard, "run", side_effect=self.command), patch.object(guard, "api", side_effect=lambda path: copy.deepcopy(self.api_responses[path])):
-            return guard.verify(tag, sha or self.sha)
+            return guard.verify(tag, sha or self.sha, package)
+
+    def test_pin_and_render_must_match_verified_digest(self):
+        metadata = ("helm", "show", "chart", ".")
+        render = ("helm", "template", "cfgate", ".", "--show-only", "templates/deployment.yaml")
+        for key, value in [
+            (metadata, 'version: 1.5.0\nappVersion: 0.2.0-alpha.6'),
+            (metadata, self.responses[metadata].replace(self.digest, "sha256:" + "d" * 64)),
+            (render, '          image: "ghcr.io/cfgate/cfgate:0.2.0-alpha.6"'),
+            (render, '          image: "ghcr.io/cfgate/cfgate@sha256:' + "d" * 64 + '"'),
+        ]:
+            original = self.responses[key]
+            self.responses[key] = value
+            with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                self.verify()
+            self.responses[key] = original
+
+    def test_packaged_image_is_checked(self):
+        package = "dist/cfgate-1.5.0.tgz"
+        metadata = ("helm", "show", "chart", package)
+        render = ("helm", "template", "cfgate", package, "--show-only", "templates/deployment.yaml")
+        self.responses[metadata] = self.responses[("helm", "show", "chart", ".")]
+        self.responses[render] = self.responses[("helm", "template", "cfgate", ".", "--show-only", "templates/deployment.yaml")]
+        self.verify(package=package)
+        self.responses[render] = '          image: "ghcr.io/cfgate/cfgate:unverified"'
+        with self.assertRaisesRegex(ValueError, "default Deployment"):
+            self.verify(package=package)
 
     def test_valid_prerelease_dependency(self):
         self.assertEqual(self.verify()["operator_source"], self.operator_sha)

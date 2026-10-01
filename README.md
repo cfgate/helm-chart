@@ -50,7 +50,7 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
 Chart 1.4.0 → 1.5.0 upgrades cfgate `0.2.0-alpha.5` → `0.2.0-alpha.6`. Existing chart values remain compatible.
 
 - no values change is needed for #85; the chart disables Service environment injection and the controller fixes configuration precedence
-- if `image.tag` is explicitly set, update it to `0.2.0-alpha.6`; an empty tag follows the chart's appVersion
+- if `image.tag` is explicitly set, clear it to use the chart's verified image pin, or update it to `0.2.0-alpha.6` to keep tag-based selection
 - if `installCRDs=false` or `rbac.create=false`, update the externally managed CRDs and RBAC to alpha.6 before rollout
 - cross-namespace references now require the applicable `ReferenceGrant`
 - existing tunnels, DNS records, and generated resources must satisfy stricter ownership checks; preserve the installation namespace and follow the migration guide before adopting legacy resources
@@ -63,6 +63,10 @@ See the [alpha.5 → alpha.6 migration guide](https://github.com/cfgate/cfgate/b
 The four rendered CRD specifications and manager RBAC match released cfgate source `b8cb740`; the CRD specifications also match its published release assets. The published image's GitHub provenance verifies against `v0.2.0-alpha.6` and that source commit. The bundled connector default is `ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1`.
 
 A disposable ARM64 kind cluster running Kubernetes 1.37.0 and Gateway API 1.6.2 passed a chart 1.4.0 → 1.5.0 upgrade using Helm 4.3.0 and `--reuse-values`. The old controller reproduced #85; the published alpha.6 image became Ready, preserved custom metrics/health ports, and passed a rollout restart. Installed CRD schemas, origin-setting validation, and the manager's service-account token were checked.
+
+After adding the default digest pin, the packaged chart passed another 1.4.0 →
+1.5.0 upgrade on that configuration: reused values were unchanged, the Deployment
+selected the pinned image, and the controller became Ready with the custom ports.
 
 The tested operator index digest was `sha256:3d3eaeae0ae0a76f8b3bc5271f642cf06f42e6525c85cb16e1b778fb4d864d6a`. This chart check created no Cloudflare resources and does not establish a Kubernetes support range. The controller's separate [release run](https://github.com/cfgate/cfgate/actions/runs/36822793906) passed all 119 live E2E tests and both architecture scans.
 
@@ -91,12 +95,25 @@ kubectl delete crd cloudflareaccesspolicies.cfgate.io
 |-----|------|---------|-------------|
 | `replicaCount` | int | `2` | Number of controller replicas |
 | `image.repository` | string | `ghcr.io/cfgate/cfgate` | Container image repository |
-| `image.tag` | string | Chart appVersion | Container image tag |
+| `image.tag` | string | `""` | Explicit tag opts out of the chart's default digest pin |
+| `image.digest` | string | `""` | Explicit SHA-256 digest; takes precedence over tag |
 | `image.pullPolicy` | string | `IfNotPresent` | Image pull policy |
 | `imagePullSecrets` | list | `[]` | Image pull secrets |
 | `nameOverride` | string | `""` | Override chart name |
 | `fullnameOverride` | string | `""` | Override full release name |
 | `namespaceOverride` | string | `""` | Override release namespace |
+
+With the default repository and empty `image.tag`/`image.digest`, the Deployment
+uses the verified multi-architecture digest recorded in
+`Chart.yaml`'s `cfgate.io/operator-image-digest` annotation. This chart-owned pin
+updates with the chart even when upgrading with `--reuse-values`.
+
+An explicit tag or custom repository preserves tag-based selection unless
+`image.digest` is supplied. A custom repository with an empty tag uses
+`appVersion`. Custom images are administrator choices and are not certified by
+the chart's release guard. Set `image.digest: sha256:<64 lowercase hex characters>`
+to pin a custom image; that digest takes precedence over any tag. An explicitly
+set digest persists with reused values, so update or clear it during upgrades.
 
 ### Controller limits and installation identity
 

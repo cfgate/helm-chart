@@ -69,5 +69,5 @@ jobs:
       - name: Template with external CRDs and RBAC
         run: helm template cfgate . --set installCRDs=false --set rbac.create=false
 
-      - name: Test release dependency guards
+      - name: Test chart contracts and release guards
         run: python3 -m unittest discover -s .github/scripts -p "test_*.py" -v
