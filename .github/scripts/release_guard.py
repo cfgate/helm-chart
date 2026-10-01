@@ -1,5 +1,6 @@
 """Verify immutable chart source and published, attested operator dependencies."""
 
+import argparse
 import base64
 import json
 import os
@@ -55,7 +56,17 @@ def image_digest(image):
     return digest
 
 
-def verify(tag, sha):
+def verify_image_pin(chart, digest):
+    metadata = run("helm", "show", "chart", chart)
+    pins = re.findall(r'^  cfgate\.io/operator-image-digest:\s*[\'"]?(sha256:[a-f0-9]{64})[\'"]?\s*$', metadata, re.M)
+    require(pins == [digest], "chart operator pin does not match verified release digest")
+    deployment = run("helm", "template", "cfgate", chart, "--show-only", "templates/deployment.yaml")
+    images = re.findall(r'^\s+image:\s*[\'"]?([^\s\'"]+)[\'"]?\s*$', deployment, re.M)
+    require(images == ["ghcr.io/cfgate/cfgate@" + digest],
+            "default Deployment must install the verified operator digest")
+
+
+def verify(tag, sha, package=None):
     require(re.fullmatch("v" + VERSION, tag), "invalid chart release tag")
     require(re.fullmatch(r"[a-f0-9]{40}", sha), "invalid chart source SHA")
     require(run("git", "rev-parse", "HEAD") == sha, "checkout does not match event SHA")
@@ -72,6 +83,9 @@ def verify(tag, sha):
     operator_sha = tag_commit("cfgate/cfgate", "v" + app)
     image = "ghcr.io/cfgate/cfgate:" + app
     digest = image_digest(image)
+    verify_image_pin(".", digest)
+    if package is not None:
+        verify_image_pin(package, digest)
     # These checks bind the available OCI digest to the released source, rather
     # than trusting the mutable image tag or the release's target_commitish.
     run("gh", "attestation", "verify", "oci://ghcr.io/cfgate/cfgate@" + digest,
@@ -93,7 +107,10 @@ def verify(tag, sha):
 
 
 if __name__ == "__main__":
-    evidence = verify(os.environ["RELEASE_TAG"], os.environ["RELEASE_SHA"])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--package", help="also verify the packaged chart's default image")
+    args = parser.parse_args()
+    evidence = verify(os.environ["RELEASE_TAG"], os.environ["RELEASE_SHA"], args.package)
     Path("dist").mkdir(exist_ok=True)
     Path("dist/release-dependencies.json").write_text(json.dumps(evidence, indent=2) + "\n")
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:

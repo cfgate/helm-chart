@@ -131,12 +131,22 @@ Chart changes should pass:
 - `helm template` with external CRDs/RBAC disabled
 - `python3 -m unittest discover -s .github/scripts -p 'test_*.py' -v`
 
+The unittest suite invokes Helm to assert image selection (including packaged
+defaults), controller/namespace/service-account overrides, compatibility with
+older values, external CRDs/RBAC, and invalid settings. It also tests release
+guard rejection paths. Both CI and release run this same suite.
+
 ### Ordered publication
 
 The chart release workflow checks the immutable tag source and chart version,
 then requires the exact `appVersion` to have a published, non-draft cfgate release.
 Prerelease operators are permitted. The available operator OCI digest must have
 a GitHub attestation from cfgate's release workflow for that source commit and tag.
+Set `cfgate.io/operator-image-digest` in `Chart.yaml` to that release's verified
+multi-architecture index digest when changing `appVersion`. The guard rejects a
+different published digest or a default Deployment that does not use the pin.
+Immediately before publication, it also checks the packaged chart's default
+image. Commit the pin in source; publication must not rewrite chart values.
 Verification reads the attestation bundle from OCI, avoiding a cross-repository
 attestation API permission requirement for the chart's workflow token.
 The connector pin is read from this verified operator source; its fork release

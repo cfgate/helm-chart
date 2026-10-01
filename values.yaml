@@ -7,8 +7,10 @@ replicaCount: 2
 image:
   repository: ghcr.io/cfgate/cfgate
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion
+  # Explicit tag or repository overrides opt out of the chart's verified default pin.
   tag: ""
+  # Optional sha256 digest; takes precedence over tag, including for custom repositories.
+  digest: ""
 
 imagePullSecrets: []
 nameOverride: ""

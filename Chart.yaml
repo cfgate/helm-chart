@@ -28,6 +28,7 @@ maintainers:
     url: https://github.com/inherent-design
 
 annotations:
+  cfgate.io/operator-image-digest: "sha256:3d3eaeae0ae0a76f8b3bc5271f642cf06f42e6525c85cb16e1b778fb4d864d6a"
   artifacthub.io/license: Apache-2.0
   artifacthub.io/category: networking
   artifacthub.io/operator: "true"
