@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-This chart targets the next cfgate release, `0.2.0-alpha.6`. Chart `1.5.0` must be published after that controller image is available.
+Chart `1.5.0` installs cfgate [`0.2.0-alpha.6`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.6).
 
 The current cfgate surface managed by this chart includes separate `CloudflareAccessApplication` and `CloudflareAccessPolicy` CRDs for Access application and policy lifecycle management.
 
@@ -29,7 +29,7 @@ kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/downloa
 
 Gateway API CRDs are a cluster-level prerequisite, not a chart dependency. They may already be installed if you run Istio, Cilium, Envoy Gateway, or another Gateway API implementation.
 
-The chart's historical `kubeVersion: ">= 1.26.0-0"` controls Helm admission for its own templates; it does not certify the complete controller and Gateway API stack on Kubernetes 1.26. Upstream [Gateway API installation requirements](https://kubernetes.io/blog/2026/04/21/gateway-api-v1-5/) and cfgate's release validation are separate checks. The final chart release must record the exact Kubernetes, Gateway API, controller image, and CRD versions actually tested.
+The chart's historical `kubeVersion: ">= 1.26.0-0"` controls Helm admission for its own templates; it does not certify the complete controller and Gateway API stack on Kubernetes 1.26. Upstream [Gateway API installation requirements](https://kubernetes.io/blog/2026/04/21/gateway-api-v1-5/) and the [tested configuration below](#release-validation) are separate checks.
 
 ## Install
 
@@ -47,27 +47,24 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
 
 ### Upgrade from 1.4.0 to 1.5.0
 
-Chart 1.4.0 → 1.5.0 upgrades cfgate `0.2.0-alpha.5` → `0.2.0-alpha.6`. The chart keeps existing values and template names compatible while adding controller configuration and CRD fields. The controller's stricter ownership and authorization rules require migration for existing resources that relied on implicit adoption or unrestricted cross-namespace references. This is not an unattended image-only upgrade.
+Chart 1.4.0 → 1.5.0 upgrades cfgate `0.2.0-alpha.5` → `0.2.0-alpha.6`. Existing chart values remain compatible.
 
-Before rollout:
+- no values change is needed for #85; the chart disables Service environment injection and the controller fixes configuration precedence
+- if `image.tag` is explicitly set, update it to `0.2.0-alpha.6`; an empty tag follows the chart's appVersion
+- if `installCRDs=false` or `rbac.create=false`, update the externally managed CRDs and RBAC to alpha.6 before rollout
+- cross-namespace references now require the applicable `ReferenceGrant`
+- existing tunnels, DNS records, and generated resources must satisfy stricter ownership checks; preserve the installation namespace and follow the migration guide before adopting legacy resources
+- to hold routes closed until Access is ready, set `cfgate.io/access-required`; intentionally public routes need no change
 
-1. Inventory existing CR UIDs, connector owner references, remote tunnel IDs, DNS data and TXT ownership records. Stop previous writers for resources being migrated and preserve the installation namespace: its Kubernetes UID now forms part of persistent ownership.
-2. Add explicit, narrowly scoped ReferenceGrants for cross-namespace credentials, Gateway/DNS/Access-to-Tunnel references, and HTTPRoute backends. Same-namespace references remain a namespace trust boundary. Keep infrastructure CRs, credential Secrets, ownership claims, connector images, and arguments under administrator control.
-3. Verify generated connector resources and Access service-token Secrets have their expected controller owner UID. cfgate refuses to overwrite unowned or foreign objects. Deliberately migrate or recreate those objects after inspecting their current owner.
-4. For an existing, verified, unclaimed remote tunnel, temporarily opt in with `cfgate.io/adopt-existing: "true"`. A foreign ownership claim still blocks adoption. Remove the opt-in after successful migration.
-5. Migrate legacy DNS ownership deliberately after stopping the previous writer. `spec.ownership.ownerId` and `cleanupPolicy.onlyManaged: false` no longer authorize overwriting or deleting another owner's records. Inspect legacy TXT claims and data markers before any manual transition; never remove a claim while its owner is active.
-6. Install the matching four CRD schemas before running the new controller, including when `installCRDs=false`. New status fields retain credential selection, installation ownership, and reconciliation state; old schemas must not prune them.
-7. Verify remote configuration, connector readiness, DNS ownership, and application requests before resuming normal traffic. Review the supported HTTPRoute subset: unsupported restrictions are rejected, while invalid attached backends return matching failure responses instead of falling through to broader routes.
+See the [alpha.5 → alpha.6 migration guide](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.6/docs/authorization-and-ownership.md#upgrade-from-v020-alpha5-to-v020-alpha6) for adoption, DNS ownership, and authorization details.
 
-See the [controller authorization and migration guide](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.6/docs/authorization-and-ownership.md) for exact grants, ownership rules, and coordination limits. Chart 1.5.0 remains downstream of the approved controller release; do not publish it before that image and its matching schemas are available.
+### Release validation
 
-Controller Pods disable Service environment injection (`enableServiceLinks: false`), preventing the metrics Service from injecting a conflicting `CFGATE_METRICS_PORT` URL. Existing explicit metrics and health flags remain supported. DNS CRD descriptions preserve the literal `{{ .TunnelDomain }}` variable. CRD schemas and RBAC must be synchronized with the final controller release; they are no longer unchanged from chart 1.4.0.
+The four rendered CRD specifications and manager RBAC match released cfgate source `b8cb740`; the CRD specifications also match its published release assets. The published image's GitHub provenance verifies against `v0.2.0-alpha.6` and that source commit. The bundled connector default is `ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1`.
 
-### Candidate provenance and validation limits
+A disposable ARM64 kind cluster running Kubernetes 1.37.0 and Gateway API 1.6.2 passed a chart 1.4.0 → 1.5.0 upgrade using Helm 4.3.0 and `--reuse-values`. The old controller reproduced #85; the published alpha.6 image became Ready, preserved custom metrics/health ports, and passed a rollout restart. Installed CRD schemas, origin-setting validation, and the manager's service-account token were checked.
 
-The four rendered CRD specifications and manager RBAC must match the controller source being released. Repeat the normalized comparisons after code generation or dependency updates; record that source commit and the released controller image digest with release evidence. The bundled connector default is `ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1`.
-
-Helm lint, local rendering, JSON Schema validation, and normalized CRD/RBAC comparisons verify chart generation. They do not establish a tested Kubernetes range, an actual cluster upgrade, or live Cloudflare compatibility. Record exact cluster, external Gateway bundle, chart, controller, connector and CRD versions from final release tests before publishing.
+The tested operator index digest was `sha256:3d3eaeae0ae0a76f8b3bc5271f642cf06f42e6525c85cb16e1b778fb4d864d6a`. This chart check created no Cloudflare resources and does not establish a Kubernetes support range. The controller's separate [release run](https://github.com/cfgate/cfgate/actions/runs/36822793906) passed all 119 live E2E tests and both architecture scans.
 
 For installations older than chart 1.4.0, first follow the [historical 1.4.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.4.0/README.md#upgrade-from-131-to-140), then apply the upgrade above.
 
