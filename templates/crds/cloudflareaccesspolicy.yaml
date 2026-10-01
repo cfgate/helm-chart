@@ -4,8 +4,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.1
     helm.sh/resource-policy: keep
+    controller-gen.kubebuilder.io/version: v0.22.0
   name: cloudflareaccesspolicies.cfgate.io
   labels:
     {{- include "cfgate.labels" . | nindent 4 }}
@@ -135,6 +135,17 @@ spec:
                   namespace:
                     description: Namespace of the secret (defaults to policy namespace).
                     type: string
+                  secretKeys:
+                    description: SecretKeys selects credential data keys; omitted
+                      keys use their defaults.
+                    properties:
+                      apiToken:
+                        default: CLOUDFLARE_API_TOKEN
+                        description: APIToken is the key name for the Cloudflare API
+                          token.
+                        maxLength: 253
+                        type: string
+                    type: object
                 required:
                 - name
                 type: object
@@ -160,7 +171,7 @@ spec:
                       - P2 (Google Workspace): GSuiteGroup
                       - P3 (not in current product scope): Certificate, CommonName, Group, GitHub, Azure, Okta, SAML, etc.
 
-                    SDK types map directly to cloudflare-go v6 SDK: IPRule, IPListRule, CountryRule,
+                    Selector types map to the Cloudflare API: IPRule, IPListRule, CountryRule,
                     EveryoneRule, ServiceTokenRule, AnyValidServiceTokenRule, EmailRule, DomainRule,
                     EmailListRule, AccessOIDCClaimRule, GSuiteGroupRule.
                   properties:
@@ -371,7 +382,7 @@ spec:
                       - P2 (Google Workspace): GSuiteGroup
                       - P3 (not in current product scope): Certificate, CommonName, Group, GitHub, Azure, Okta, SAML, etc.
 
-                    SDK types map directly to cloudflare-go v6 SDK: IPRule, IPListRule, CountryRule,
+                    Selector types map to the Cloudflare API: IPRule, IPListRule, CountryRule,
                     EveryoneRule, ServiceTokenRule, AnyValidServiceTokenRule, EmailRule, DomainRule,
                     EmailListRule, AccessOIDCClaimRule, GSuiteGroupRule.
                   properties:
@@ -597,7 +608,7 @@ spec:
                       - P2 (Google Workspace): GSuiteGroup
                       - P3 (not in current product scope): Certificate, CommonName, Group, GitHub, Azure, Okta, SAML, etc.
 
-                    SDK types map directly to cloudflare-go v6 SDK: IPRule, IPListRule, CountryRule,
+                    Selector types map to the Cloudflare API: IPRule, IPListRule, CountryRule,
                     EveryoneRule, ServiceTokenRule, AnyValidServiceTokenRule, EmailRule, DomainRule,
                     EmailListRule, AccessOIDCClaimRule, GSuiteGroupRule.
                   properties:
@@ -922,6 +933,16 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
+              credentialSecretKeys:
+                description: CredentialSecretKeys preserves selected token keys for
+                  cleanup.
+                properties:
+                  apiToken:
+                    default: CLOUDFLARE_API_TOKEN
+                    description: APIToken is the key name for the Cloudflare API token.
+                    maxLength: 253
+                    type: string
+                type: object
               credentialSecretRef:
                 description: |-
                   CredentialSecretRef is the resolved credentials Secret used for cleanup.

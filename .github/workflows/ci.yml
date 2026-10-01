@@ -7,9 +7,11 @@ on:
       - "Chart.yaml"
       - "values.yaml"
       - "values.schema.json"
+      - ".helmignore"
       - "templates/**"
       - "ci/**"
       - ".github/workflows/**"
+      - ".github/scripts/**"
       - ".github/actionlint.yaml"
       - "cliff.toml"
       - "artifacthub-repo.yml"
@@ -19,9 +21,11 @@ on:
       - "Chart.yaml"
       - "values.yaml"
       - "values.schema.json"
+      - ".helmignore"
       - "templates/**"
       - "ci/**"
       - ".github/workflows/**"
+      - ".github/scripts/**"
       - ".github/actionlint.yaml"
       - "cliff.toml"
       - "artifacthub-repo.yml"
@@ -39,7 +43,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.1
 
       - uses: rhysd/actionlint@v1.7.12
 
@@ -47,11 +51,11 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.1
 
-      - uses: azure/setup-helm@v5.0.0
+      - uses: azure/setup-helm@v5.0.1
         with:
-          version: v4.1.4
+          version: v4.3.0
 
       - name: Lint chart
         run: helm lint .
@@ -61,3 +65,9 @@ jobs:
 
       - name: Template with CI values
         run: helm template cfgate . -f ci/default-values.yaml
+
+      - name: Template with external CRDs and RBAC
+        run: helm template cfgate . --set installCRDs=false --set rbac.create=false
+
+      - name: Test release dependency guards
+        run: python3 -m unittest discover -s .github/scripts -p "test_*.py" -v

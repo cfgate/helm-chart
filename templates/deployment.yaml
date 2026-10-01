@@ -1,3 +1,4 @@
+{{- $controller := merge (deepCopy (.Values.controller | default dict)) (dict "clusterDomain" "cluster.local" "installationNamespace" "" "cloudflareRequestTimeoutSeconds" 30 "maxIngressRules" 1000 "maxConfigurationBytes" 1048576) -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,6 +24,7 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      enableServiceLinks: false
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -39,6 +41,18 @@ spec:
             - --leader-elect
             - --health-probe-bind-address=:{{ .Values.health.port }}
             - --metrics-bind-address=:{{ .Values.metrics.port }}
+            - {{ printf "--cluster-domain=%s" $controller.clusterDomain | quote }}
+            - {{ printf "--cloudflare-request-timeout=%ds" ($controller.cloudflareRequestTimeoutSeconds | int64) | quote }}
+            - {{ printf "--max-ingress-rules=%d" ($controller.maxIngressRules | int64) | quote }}
+            - {{ printf "--max-configuration-bytes=%d" ($controller.maxConfigurationBytes | int64) | quote }}
+            {{- with $controller.installationNamespace }}
+            - {{ printf "--installation-namespace=%s" . | quote }}
+            {{- end }}
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           ports:
             - name: metrics
               containerPort: {{ .Values.metrics.port }}
