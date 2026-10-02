@@ -95,12 +95,13 @@ def verify(tag, sha, package=None):
     source = api(f"repos/cfgate/cfgate/contents/internal/cloudflared/deployment.go?ref={operator_sha}")
     require(source.get("encoding") == "base64", "unexpected source encoding")
     code = base64.b64decode(source["content"]).decode()
-    matches = re.findall(r'DefaultImage\s*=\s*"(ghcr\.io/inherent-design/cloudflared:([0-9A-Za-z.-]+))"', code)
+    matches = re.findall(r'DefaultImage\s*=\s*"(ghcr\.io/inherent-design/cloudflared:([0-9A-Za-z.-]+)(?:@(sha256:[a-f0-9]{64}))?)"', code)
     require(len(matches) == 1, "released operator must identify one versioned connector")
-    fork_image, fork_version = matches[0]
+    fork_image, fork_version, fork_pin = matches[0]
     require(re.fullmatch(VERSION, fork_version), "invalid connector version")
     published_release("inherent-design/cloudflared", "v" + fork_version)
     fork_digest = image_digest(fork_image)
+    require(not fork_pin or fork_pin == fork_digest, "connector digest does not match released operator pin")
     return {"version": version, "source": sha, "app_version": app,
             "operator_source": operator_sha, "operator_image": image, "operator_digest": digest,
             "connector_image": fork_image, "connector_digest": fork_digest}

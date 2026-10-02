@@ -26,6 +26,7 @@ controller:
   cloudflareRequestTimeoutSeconds: 30
   # Aggregate limits include the fallback rule and serialized origin settings.
   maxIngressRules: 1000
+  # At least 67 bytes, enough for emergency HTTP 503 withdrawal.
   maxConfigurationBytes: 1048576
 
 # Install CRDs with the chart
