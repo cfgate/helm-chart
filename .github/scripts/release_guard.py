@@ -100,7 +100,8 @@ def verify(tag, sha, package=None):
     fork_image, fork_version, fork_pin = matches[0]
     require(re.fullmatch(VERSION, fork_version), "invalid connector version")
     published_release("inherent-design/cloudflared", "v" + fork_version)
-    fork_digest = image_digest(fork_image)
+    # Resolve the mutable version tag independently of the operator's pin.
+    fork_digest = image_digest(fork_image.split("@")[0])
     require(not fork_pin or fork_pin == fork_digest, "connector digest does not match released operator pin")
     return {"version": version, "source": sha, "app_version": app,
             "operator_source": operator_sha, "operator_image": image, "operator_digest": digest,

@@ -51,6 +51,7 @@ remain compatible, except `controller.maxConfigurationBytes` must be at least 67
 - clear or update explicit `image.tag`/`image.digest` overrides to select alpha.7
 - update externally managed CRDs before rollout (`installCRDs=false`); Access ownership and recovery require the new status fields
 - existing Access resources require deliberate adoption; preserve the installation namespace and follow the [alpha.6 → alpha.7 migration notes](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.7/docs/authorization-and-ownership.md#upgrade-from-v020-alpha6-to-v020-alpha7)
+- existing Tunnels retain their stored connector image; set `spec.cloudflared.image` to the digest-pinned default in the [alpha.7 migration notes](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.7/docs/authorization-and-ownership.md#upgrade-from-v020-alpha6-to-v020-alpha7) to opt in
 - origin CA Secret keys must contain valid PEM certificates; changes now roll connector Pods
 - exceeding a tunnel's configuration limits now withdraws forwarding with HTTP 503 until the configuration fits
 
