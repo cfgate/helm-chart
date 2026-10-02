@@ -297,10 +297,10 @@
         },
         "maxConfigurationBytes": {
           "type": "integer",
-          "minimum": 1,
+          "minimum": 67,
           "maximum": 2147483647,
           "default": 1048576,
-          "description": "Maximum serialized tunnel configuration bytes"
+          "description": "Maximum serialized tunnel configuration bytes; at least 67 to permit emergency HTTP 503 withdrawal"
         }
       }
     }

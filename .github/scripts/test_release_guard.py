@@ -121,6 +121,26 @@ class ReleaseGuardTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.verify()
 
+    def test_digest_pinned_connector(self):
+        image = "ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1@" + self.digest
+        self.api_responses[self.source_path]["content"] = base64.b64encode(
+            ('DefaultImage = "' + image + '"').encode()).decode()
+        self.responses[("oras", "resolve", image)] = self.digest
+        evidence = self.verify()
+        self.assertEqual(evidence["connector_image"], image)
+        self.assertEqual(evidence["connector_digest"], self.digest)
+        self.responses[("oras", "resolve", image)] = "sha256:" + "d" * 64
+        with self.assertRaisesRegex(ValueError, "connector digest"):
+            self.verify()
+
+    def test_malformed_connector_digest_rejects(self):
+        for digest in ["sha256:short", "sha256:" + "A" * 64, "latest"]:
+            image = "ghcr.io/inherent-design/cloudflared:2026.9.3-h2c.1@" + digest
+            self.api_responses[self.source_path]["content"] = base64.b64encode(
+                ('DefaultImage = "' + image + '"').encode()).decode()
+            with self.subTest(digest=digest), self.assertRaises(ValueError):
+                self.verify()
+
     def test_source_connector_required(self):
         self.api_responses[self.source_path]["content"] = base64.b64encode(b'DefaultImage = "cloudflare/cloudflared:latest"').decode()
         with self.assertRaises(ValueError):

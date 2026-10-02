@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-Chart `1.5.0` installs cfgate [`0.2.0-alpha.6`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.6).
+Chart `1.6.0` installs cfgate [`0.2.0-alpha.7`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.7).
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
@@ -43,20 +43,19 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
-### Upgrade from 1.4.0 to 1.5.0
+### Upgrade from 1.5.0 to 1.6.0
 
-Chart 1.4.0 → 1.5.0 upgrades cfgate `0.2.0-alpha.5` → `0.2.0-alpha.6`. Existing chart values remain compatible.
+This upgrades cfgate `0.2.0-alpha.6` to `0.2.0-alpha.7`. Existing chart values
+remain compatible, except `controller.maxConfigurationBytes` must be at least 67.
 
-- no values change is needed for #85; the chart disables Service environment injection and the controller fixes configuration precedence
-- if `image.tag` is explicitly set, clear it to use the chart's verified image pin, or update it to `0.2.0-alpha.6` to keep tag-based selection
-- if `installCRDs=false` or `rbac.create=false`, update the external CRDs and provide the chart's [required RBAC](#crds-and-rbac) before rollout
-- cross-namespace references now require the applicable `ReferenceGrant`
-- existing tunnels, DNS records, and generated resources must satisfy stricter ownership checks; preserve the installation namespace and follow the migration guide before adopting legacy resources
-- to hold routes closed until Access is ready, set `cfgate.io/access-required`; intentionally public routes need no change
+- clear or update explicit `image.tag`/`image.digest` overrides to select alpha.7
+- update externally managed CRDs before rollout (`installCRDs=false`); Access ownership and recovery require the new status fields
+- existing Access resources require deliberate adoption; preserve the installation namespace and follow the [alpha.6 → alpha.7 migration notes](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.7/docs/authorization-and-ownership.md#upgrade-from-v020-alpha6-to-v020-alpha7)
+- origin CA Secret keys must contain valid PEM certificates; changes now roll connector Pods
+- exceeding a tunnel's configuration limits now withdraws forwarding with HTTP 503 until the configuration fits
 
-See the [alpha.5 → alpha.6 migration guide](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.6/docs/authorization-and-ownership.md#upgrade-from-v020-alpha5-to-v020-alpha6) for adoption, DNS ownership, and authorization details.
-
-For installations older than chart 1.4.0, first follow the [historical 1.4.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.4.0/README.md#upgrade-from-131-to-140), then apply the upgrade above.
+With `installCRDs=true`, Helm updates the templated CRDs during upgrade. For
+older installations, first follow the [1.5.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.5.0/README.md#upgrade-from-140-to-150).
 
 ## Uninstall
 
@@ -111,7 +110,7 @@ set digest persists with reused values, so update or clear it during upgrades.
 | `controller.maxIngressRules` | int | `1000` | `--max-ingress-rules` |
 | `controller.maxConfigurationBytes` | int | `1048576` | `--max-configuration-bytes` |
 
-Timeout values are positive whole seconds, with a maximum of 9223372036 seconds (the manager's duration representation limit). Rule and byte limits accept positive integers up to 2147483647. These are operator work limits, not Cloudflare service limits; exceeding them rejects configuration publication instead of truncating routes. The rule budget includes the fallback rule. The byte budget includes serialized ingress and origin settings.
+Timeout values are positive whole seconds, with a maximum of 9223372036 seconds (the manager's duration representation limit). Rule limits accept integers from 1 to 2147483647; byte limits accept 67 to 2147483647 so the controller can publish an emergency denial. These are operator work limits, not Cloudflare service limits; exceeding them replaces tunnel forwarding with HTTP 503 until the configuration fits. The rule budget includes the fallback rule. The byte budget includes serialized ingress and origin settings.
 
 `clusterDomain` accepts a lowercase DNS suffix without a trailing dot. Use the suffix actually configured in the cluster; setting the value does not reconfigure cluster DNS. For example:
 
@@ -123,7 +122,7 @@ controller:
   maxConfigurationBytes: 2097152
 ```
 
-`POD_NAMESPACE` comes from the Pod's actual `metadata.namespace`, so `namespaceOverride` also selects the default installation namespace correctly. The namespace's Kubernetes UID and each resource UID participate in ownership. Preserve that namespace across upgrades. Setting `controller.installationNamespace` selects an existing namespace for identity and tunnel claims; it does not create one. Changing that value, deleting/recreating the namespace, or recreating owned CRs requires the documented ownership migration.
+`POD_NAMESPACE` comes from the Pod's actual `metadata.namespace`, so `namespaceOverride` also selects the default installation namespace correctly. The namespace's Kubernetes UID and each resource UID participate in ownership. Preserve that namespace across upgrades. Setting `controller.installationNamespace` selects an existing namespace for identity and Tunnel/Access claims; it does not create one. Changing that value, deleting/recreating the namespace, or recreating owned CRs requires the documented ownership migration.
 
 ### CRDs and RBAC
 
@@ -146,12 +145,11 @@ When `rbac.create=false`, supply both the cluster-wide manager permissions and
 the namespaced claim permissions yourself. Remove any previous cluster-wide
 ConfigMap grant; adding a namespaced Role alone does not revoke it. This scopes
 ConfigMap access to a namespace, not individual claims, and leaves other required
-manager permissions unchanged. No CRD or controller-image update is needed for
-this RBAC restriction. Do not disable the manager's service-account token: it
+manager permissions unchanged. Do not disable the manager's service-account token: it
 needs Kubernetes API access. Connector Pods independently disable unused token
 mounting.
 
-Access-required routing remains an explicit per-HTTPRoute opt-in (`cfgate.io/access-required: namespace/name`), not a chart-wide setting. Its dependency receipts are included in the Tunnel CRD. The selected tunnel credential needs Access application/policy read permissions. See the [Access-required contract and limits](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.6/docs/access-required.md); edge configuration is asynchronous, and strict or gRPC authentication requires origin-side enforcement.
+Access-required routing remains an explicit per-HTTPRoute opt-in (`cfgate.io/access-required: namespace/name`), not a chart-wide setting. Its dependency receipts are included in the Tunnel CRD. The selected tunnel credential needs Access application/policy read permissions. See the [Access-required contract and limits](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.7/docs/access-required.md); edge configuration is asynchronous, and strict or gRPC authentication requires origin-side enforcement.
 
 ### Metrics and Monitoring
 
@@ -198,13 +196,13 @@ Access-required routing remains an explicit per-HTTPRoute opt-in (`cfgate.io/acc
 
 ## High Availability
 
-High availability is enabled by default with 2 replicas. To scale further:
+The chart defaults to two controller replicas. To scale further:
 
 ```yaml
 replicaCount: 3
 ```
 
-Leader election is always enabled via `--leader-elect`, so only one replica actively reconciles at a time while standby replicas take over if the leader fails.
+Leader election is always enabled via `--leader-elect`, so only one replica actively reconciles at a time while standby replicas take over if the leader fails. Replicas alone do not ensure placement on different nodes; configure `affinity` for the failure domains your deployment requires.
 
 ## Monitoring
 

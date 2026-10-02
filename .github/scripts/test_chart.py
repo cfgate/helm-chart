@@ -10,7 +10,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DIGEST = "sha256:3d3eaeae0ae0a76f8b3bc5271f642cf06f42e6525c85cb16e1b778fb4d864d6a"
+DIGEST = "sha256:edcccbec17ccec00e235a8d706a112c40ddfa121b1d1fd1e1efc72398e0f9570"
 
 
 class ChartTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class ChartTests(unittest.TestCase):
         for values, expected in [
             ({}, "ghcr.io/cfgate/cfgate@" + DIGEST),
             ({"image": {"tag": "custom"}}, "ghcr.io/cfgate/cfgate:custom"),
-            ({"image": {"repository": "example.com/operator"}}, "example.com/operator:0.2.0-alpha.6"),
+            ({"image": {"repository": "example.com/operator"}}, "example.com/operator:0.2.0-alpha.7"),
             ({"image": {"repository": "example.com/operator", "tag": "custom"}}, "example.com/operator:custom"),
             ({"image": {"digest": custom, "tag": "ignored"}}, "ghcr.io/cfgate/cfgate@" + custom),
             ({"image": {"repository": "example.com/operator", "digest": custom}}, "example.com/operator@" + custom),
@@ -124,12 +124,18 @@ class ChartTests(unittest.TestCase):
                 self.assertIn('  kind: Role\n  name: cfgate-claims', binding)
                 self.assertIn('name: ' + account + '\n    namespace: ' + account_namespace, binding)
 
+    def test_minimum_configuration_budget(self):
+        result = self.render({"controller": {"maxConfigurationBytes": 67}})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('--max-configuration-bytes=67', result.stdout)
+
     def test_invalid_values_rejected(self):
         for values in [
             {"image": {"digest": "latest"}}, {"image": {"digest": "sha256:abc"}},
             {"controller": {"cloudflareRequestTimeoutSeconds": 0}},
             {"controller": {"cloudflareRequestTimeoutSeconds": 9223372037}},
             {"controller": {"maxIngressRules": 0}}, {"controller": {"maxConfigurationBytes": 0}},
+            {"controller": {"maxConfigurationBytes": 66}},
             {"controller": {"clusterDomain": "bad_domain"}},
             {"controller": {"installationNamespace": "Bad"}},
         ]:
