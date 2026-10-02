@@ -129,7 +129,7 @@ class ReleaseGuardTests(unittest.TestCase):
         evidence = self.verify()
         self.assertEqual(evidence["connector_image"], image)
         self.assertEqual(evidence["connector_digest"], self.digest)
-        self.responses[("oras", "resolve", image)] = "sha256:" + "d" * 64
+        self.responses[("oras", "resolve", image.split("@")[0])] = "sha256:" + "d" * 64
         with self.assertRaisesRegex(ValueError, "connector digest"):
             self.verify()
 
