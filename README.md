@@ -43,6 +43,21 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
+### Next controller update (unreleased)
+
+The next operator update tightens DNS namespace selection and origin transport
+validation. This branch prepares migration guidance; its chart still selects the
+published alpha.10 image until the next operator release is available.
+
+- namespace `matchLabels` requires each label to exist, including empty values; add the intended label or use `matchNames` to include a namespace explicitly
+- HTTPS cannot use h2c, and inherited HTTP/2 and h2c cannot both be enabled; disable the inherited transport explicitly when switching
+- invalid effective route transport retains matching HTTP 503 responses while valid siblings and backend revocations continue to publish
+- HTTPRoute backends require TCP Service ports; UDP-only and SCTP-only ports produce matching HTTP 500 responses
+
+No new CRD fields, chart settings, or connector image are required. Review the
+actual image overrides and origin settings stored on existing Tunnel resources.
+Keep installation identity and unfinished recovery state through the upgrade.
+
 ### Upgrade from 1.8.0 to 1.9.0
 
 This upgrades cfgate `0.2.0-alpha.9` to `0.2.0-alpha.10`. Existing chart values
