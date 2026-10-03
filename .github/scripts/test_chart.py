@@ -30,6 +30,26 @@ class ChartTests(unittest.TestCase):
         self.assertEqual(len(images), 1)
         return images[0]
 
+    def test_endpoint_ports_must_differ(self):
+        for enabled in [True, False]:
+            result = self.render({"metrics": {"service": {"enabled": enabled}, "port": 8081}, "health": {"port": 8081}})
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("metrics.port and health.port must differ", result.stderr)
+        for values in [{}, {"metrics": {"port": 9090}, "health": {"port": 9091}},
+                       {"metrics": {"service": {"port": 8081}}}]:
+            result = self.render(values)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_termination_grace(self):
+        for values, expected in [({}, 30), ({"terminationGracePeriodSeconds": None}, 30), ({"terminationGracePeriodSeconds": 0}, 0),
+                                 ({"terminationGracePeriodSeconds": 60}, 60)]:
+            result = self.render(values)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(f"terminationGracePeriodSeconds: {expected}", result.stdout)
+        for invalid in [-1, 1.5, "30"]:
+            result = self.render({"terminationGracePeriodSeconds": invalid})
+            self.assertNotEqual(result.returncode, 0)
+
     def test_image_selection(self):
         custom = "sha256:" + "a" * 64
         for values, expected in [

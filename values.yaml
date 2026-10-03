@@ -4,6 +4,9 @@
 # Number of controller replicas
 replicaCount: 2
 
+# Kubernetes shutdown allowance; recovery must also tolerate forced termination.
+terminationGracePeriodSeconds: 30
+
 image:
   repository: ghcr.io/cfgate/cfgate
   pullPolicy: IfNotPresent

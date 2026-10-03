@@ -303,6 +303,12 @@
           "description": "Maximum serialized tunnel configuration bytes; at least 67 to permit emergency HTTP 503 withdrawal"
         }
       }
+    },
+    "terminationGracePeriodSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 30,
+      "description": "Pod termination allowance in seconds; zero requests immediate termination"
     }
   }
 }
