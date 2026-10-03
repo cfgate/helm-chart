@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-Chart `1.8.0` installs cfgate [`0.2.0-alpha.9`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.9).
+Chart `1.9.0` installs cfgate [`0.2.0-alpha.10`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.10).
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
