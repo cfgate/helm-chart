@@ -283,7 +283,7 @@ spec:
                         DNSExplicitHostname defines an explicit hostname to sync with optional per-hostname configuration.
 
                         DNSExplicitHostname provides direct specification of DNS hostnames without depending on
-                        Gateway API route discovery. The Target field supports the {{ `{{ .TunnelDomain }}` }} template
+                        Gateway API route discovery. The Target field supports the {{`{{ .TunnelDomain }}`}} template
                         variable for dynamic resolution when using tunnelRef.
                       properties:
                         hostname:
@@ -305,16 +305,15 @@ spec:
                         target:
                           description: |-
                             Target overrides the resolved record target for this hostname.
-                            Supports template variable {{ `{{ .TunnelDomain }}` }} when tunnelRef is used.
+                            Supports template variable {{`{{ .TunnelDomain }}`}} when tunnelRef is used.
                             Defaults to the resource-level resolved target when omitted.
                             Max 253: RFC 1035 section 2.3.4 FQDN presentation-format limit.
                           maxLength: 253
                           type: string
                         ttl:
-                          default: 1
                           description: |-
                             TTL is the DNS record TTL in seconds. 1 means auto (Cloudflare managed).
-                            Valid values: 1 (auto) or 60-86400 (explicit).
+                            Omitted values inherit spec.defaults.ttl. Valid values: 1 (auto) or 60-86400.
                           format: int32
                           maximum: 86400
                           minimum: 1
