@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-Chart `1.7.0` installs cfgate [`0.2.0-alpha.8`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.8).
+Chart `1.8.0` installs cfgate [`0.2.0-alpha.9`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.9).
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
@@ -43,12 +43,11 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
-### Planned upgrade from 1.7.0 to 1.8.0
+### Upgrade from 1.7.0 to 1.8.0
 
-This branch prepares cfgate `0.2.0-alpha.9`. Release metadata and the default image
-pin remain at the published alpha.8 release until alpha.9 is available; do not
-publish this preparation as the alpha.9 chart. The CRD and template changes are
-ready for review together with [cfgate PR #94](https://github.com/cfgate/cfgate/pull/94).
+This upgrades cfgate `0.2.0-alpha.8` to `0.2.0-alpha.9`. Existing chart values
+remain compatible except colliding listener ports, which now fail rendering.
+Clear or update explicit image overrides to select the new chart-owned digest.
 
 - remove Access rule items containing `everyone: false` or `anyValidServiceToken: false`; use `true` only when that match is intended
 - install matching CRDs before the new controller when `installCRDs=false`
