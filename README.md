@@ -43,24 +43,24 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
-### Upgrade from 1.7.0 to 1.8.0
+### Upgrade from 1.8.0 to 1.9.0
 
-This upgrades cfgate `0.2.0-alpha.8` to `0.2.0-alpha.9`. Existing chart values
-remain compatible except colliding listener ports, which now fail rendering.
-Clear or update explicit image overrides to select the new chart-owned digest.
+This upgrades cfgate `0.2.0-alpha.9` to `0.2.0-alpha.10`. Existing chart values
+and CRD fields remain compatible. Clear or update explicit image overrides to
+select the new chart-owned digest.
 
-- remove Access rule items containing `everyone: false` or `anyValidServiceToken: false`; use `true` only when that match is intended
-- install matching CRDs before the new controller when `installCRDs=false`
-- give `metrics.port` and `health.port` different values; `metrics.service.port` is independent
-- proxied DNS records use Auto TTL; the configured TTL applies when proxying is disabled
-- omitted hostname TTLs now inherit `spec.defaults.ttl`; older stored `ttl: 1` values still select Auto, so remove that override after the CRD upgrade only when inheritance is intended
-- the Pod termination allowance defaults to 30 seconds instead of 10; set `terminationGracePeriodSeconds` explicitly if your shutdown budget differs
+- explicit `cfgate.io/origin-ssl-verify: "true"` now overrides an insecure tunnel default; check origin certificates and CA bundles before upgrading
+- origin protocol and documented Boolean aliases are case-insensitive; invalid transport annotations are rejected
+- explicit `origin-http2: "false"` and `origin-h2c: "false"` now disable inherited settings; disable the inherited transport when switching between them
+- origin connect timeouts must represent positive whole seconds, such as `10s` or `1m`
+- omitted route `cfgate.io/ttl` now inherits the DNS resource's default; set `"1"` to keep Auto under a custom default
+- duplicate hostname settings are compared after inheritance and proxied-TTL normalization; genuinely different effective records still conflict
 
 Preserve installation identity and pending recovery state through the upgrade.
 Resolve pending DNS writes and service-token distribution before any rollback.
 For older installations, follow the versioned
-[1.6.0 to 1.7.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.7.0/README.md#upgrade-from-160-to-170)
-first, including normalization of legacy token durations.
+[1.7.0 to 1.8.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.8.0/README.md#upgrade-from-170-to-180)
+first, including selector validation and stored TTL overrides.
 
 ## Controller removal
 
