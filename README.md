@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-Chart `1.6.0` installs cfgate [`0.2.0-alpha.7`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.7).
+Chart `1.7.0` installs cfgate [`0.2.0-alpha.8`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.8).
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
@@ -43,20 +43,25 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
-### Upgrade from 1.5.0 to 1.6.0
+### Upgrade from 1.6.0 to 1.7.0
 
-This upgrades cfgate `0.2.0-alpha.6` to `0.2.0-alpha.7`. Existing chart values
-remain compatible, except `controller.maxConfigurationBytes` must be at least 67.
+This upgrades cfgate `0.2.0-alpha.7` to `0.2.0-alpha.8`. Existing chart values
+remain compatible.
 
-- clear or update explicit `image.tag`/`image.digest` overrides to select alpha.7
-- update externally managed CRDs before rollout (`installCRDs=false`); Access ownership and recovery require the new status fields
-- existing Access resources require deliberate adoption; preserve the installation namespace and follow the [alpha.6 → alpha.7 migration notes](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.7/docs/authorization-and-ownership.md#upgrade-from-v020-alpha6-to-v020-alpha7)
-- existing Tunnels retain their stored connector image; set `spec.cloudflared.image` to the digest-pinned default in the [alpha.7 migration notes](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.7/docs/authorization-and-ownership.md#upgrade-from-v020-alpha6-to-v020-alpha7) to opt in
-- origin CA Secret keys must contain valid PEM certificates; changes now roll connector Pods
-- exceeding a tunnel's configuration limits now withdraws forwarding with HTTP 503 until the configuration fits
+- clear or update explicit `image.tag`/`image.digest` overrides to select alpha.8
+- install matching CRDs before rollout when `installCRDs=false`; the new DNS recovery fields must not be pruned
+- managed service tokens now renew their configured lifetime automatically; renewal keeps the secret, while rotation replaces it
+- token names and destination Secrets must be unique within each policy, and durations must be positive; optional `rotationOverlap` defaults to zero and does not reload consumers
+- route-derived DNS now requires Gateway/listener admission; namespace and annotation selectors are additional filters
+- DNS uses the most specific configured zone; check delegated subdomain zones before upgrading
+- equivalent hostname spellings are merged; conflicting explicit settings are rejected, and TXT ownership prefixes cannot be changed in place
 
-With `installCRDs=true`, Helm updates the templated CRDs during upgrade. For
-older installations, first follow the [1.5.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.5.0/README.md#upgrade-from-140-to-150).
+With `installCRDs=true`, Helm updates the templated CRDs during upgrade. Preserve
+the installation namespace and its ownership claims. Before rolling back either
+the image or schemas, resolve pending DNS writes and service-token distribution
+operations; see the [alpha.7 → alpha.8 upgrade and rollback guidance](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.8/docs/compatibility.md#upgrade-from-v020-alpha7-to-v020-alpha8).
+
+For older installations, first follow the [1.5.0 → 1.6.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.6.0/README.md#upgrade-from-150-to-160).
 
 ## Uninstall
 
