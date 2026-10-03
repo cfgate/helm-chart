@@ -54,6 +54,7 @@ ready for review together with [cfgate PR #94](https://github.com/cfgate/cfgate/
 - install matching CRDs before the new controller when `installCRDs=false`
 - give `metrics.port` and `health.port` different values; `metrics.service.port` is independent
 - proxied DNS records use Auto TTL; the configured TTL applies when proxying is disabled
+- omitted hostname TTLs now inherit `spec.defaults.ttl`; older stored `ttl: 1` values still select Auto, so remove that override after the CRD upgrade only when inheritance is intended
 - the Pod termination allowance defaults to 30 seconds instead of 10; set `terminationGracePeriodSeconds` explicitly if your shutdown budget differs
 
 Preserve installation identity and pending recovery state through the upgrade.
