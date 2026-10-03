@@ -51,10 +51,25 @@ remain compatible.
 - clear or update explicit `image.tag`/`image.digest` overrides to select alpha.8
 - install matching CRDs before rollout when `installCRDs=false`; the new DNS recovery fields must not be pruned
 - managed service tokens now renew their configured lifetime automatically; renewal keeps the secret, while rotation replaces it
-- token names and destination Secrets must be unique within each policy, and durations must be positive; optional `rotationOverlap` defaults to zero and does not reload consumers
+- before upgrading CRDs, normalize token durations to positive whole hours without leading zeros (`012h` → `12h`); replace `0h` with the intended positive lifetime or remove the token
+- token names and destination Secrets must be unique within each policy; optional `rotationOverlap` defaults to zero and does not reload consumers
 - route-derived DNS now requires Gateway/listener admission; namespace and annotation selectors are additional filters
 - DNS uses the most specific configured zone; check delegated subdomain zones before upgrading
 - equivalent hostname spellings are merged; conflicting explicit settings are rejected, and TXT ownership prefixes cannot be changed in place
+
+Update both the policy's stored `spec.serviceTokens[].duration` and its source
+manifest or GitOps values. If the CRDs were already upgraded, patch the duration
+to its canonical value before editing other token settings. For example, after
+checking that the first token is the intended one:
+
+```bash
+kubectl patch cloudflareaccesspolicy <policy> -n <namespace> --type=json \
+  -p '[{"op":"replace","path":"/spec/serviceTokens/0/duration","value":"12h"}]'
+```
+
+Unchanged legacy values may remain editable through Kubernetes validation
+ratcheting, but edits within the token list can require normalization. Do not rely
+on ratcheting instead of completing this migration.
 
 With `installCRDs=true`, Helm updates the templated CRDs during upgrade. Preserve
 the installation namespace and its ownership claims. Before rolling back either
