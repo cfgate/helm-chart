@@ -43,63 +43,75 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
-### Upgrade from 1.6.0 to 1.7.0
+### Planned upgrade from 1.7.0 to 1.8.0
 
-This upgrades cfgate `0.2.0-alpha.7` to `0.2.0-alpha.8`. Existing chart values
-remain compatible.
+This branch prepares cfgate `0.2.0-alpha.9`. Release metadata and the default image
+pin remain at the published alpha.8 release until alpha.9 is available; do not
+publish this preparation as the alpha.9 chart. The CRD and template changes are
+ready for review together with [cfgate PR #94](https://github.com/cfgate/cfgate/pull/94).
 
-- clear or update explicit `image.tag`/`image.digest` overrides to select alpha.8
-- install matching CRDs before rollout when `installCRDs=false`; the new DNS recovery fields must not be pruned
-- managed service tokens now renew their configured lifetime automatically; renewal keeps the secret, while rotation replaces it
-- before upgrading CRDs, normalize token durations to positive whole hours without leading zeros (`012h` → `12h`); replace `0h` with the intended positive lifetime or remove the token
-- token names and destination Secrets must be unique within each policy; optional `rotationOverlap` defaults to zero and does not reload consumers
-- route-derived DNS now requires Gateway/listener admission; namespace and annotation selectors are additional filters
-- DNS uses the most specific configured zone; check delegated subdomain zones before upgrading
-- equivalent hostname spellings are merged; conflicting explicit settings are rejected, and TXT ownership prefixes cannot be changed in place
+- remove Access rule items containing `everyone: false` or `anyValidServiceToken: false`; use `true` only when that match is intended
+- install matching CRDs before the new controller when `installCRDs=false`
+- give `metrics.port` and `health.port` different values; `metrics.service.port` is independent
+- proxied DNS records use Auto TTL; the configured TTL applies when proxying is disabled
+- the Pod termination allowance defaults to 30 seconds instead of 10; set `terminationGracePeriodSeconds` explicitly if your shutdown budget differs
 
-Update both the policy's stored `spec.serviceTokens[].duration` and its source
-manifest or GitOps values. If the CRDs were already upgraded, patch the duration
-to its canonical value before editing other token settings. For example, after
-checking that the first token is the intended one:
+Preserve installation identity and pending recovery state through the upgrade.
+Resolve pending DNS writes and service-token distribution before any rollback.
+For older installations, follow the versioned
+[1.6.0 to 1.7.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.7.0/README.md#upgrade-from-160-to-170)
+first, including normalization of legacy token durations.
 
-```bash
-kubectl patch cloudflareaccesspolicy <policy> -n <namespace> --type=json \
-  -p '[{"op":"replace","path":"/spec/serviceTokens/0/duration","value":"12h"}]'
-```
+## Controller removal
 
-Unchanged legacy values may remain editable through Kubernetes validation
-ratcheting, but edits within the token list can require normalization. Do not rely
-on ratcheting instead of completing this migration.
-
-With `installCRDs=true`, Helm updates the templated CRDs during upgrade. Preserve
-the installation namespace and its ownership claims. Before rolling back either
-the image or schemas, resolve pending DNS writes and service-token distribution
-operations; see the [alpha.7 → alpha.8 upgrade and rollback guidance](https://github.com/cfgate/cfgate/blob/v0.2.0-alpha.8/docs/compatibility.md#upgrade-from-v020-alpha7-to-v020-alpha8).
-
-For older installations, first follow the [1.5.0 → 1.6.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.6.0/README.md#upgrade-from-150-to-160).
-
-## Uninstall
+For a temporary controller-only removal:
 
 ```bash
 helm uninstall cfgate --namespace cfgate-system
 ```
 
-CRDs are not deleted on uninstall (annotated with `helm.sh/resource-policy: keep`). This prevents accidental deletion of all CloudflareTunnel, CloudflareDNS, CloudflareAccessApplication, and CloudflareAccessPolicy resources in the cluster. To remove CRDs manually:
+The chart retains CRDs. Keep custom resources, credential Secrets, ReferenceGrants,
+and the installation namespace with its ownership claims so the matching controller
+can resume work after reinstallation. Connector Pods and Cloudflare resources can
+keep serving existing traffic. Configuration updates, drift repair, token renewal
+and finalization stop while the controller is absent.
 
-```bash
-kubectl delete crd cloudflaretunnels.cfgate.io
-kubectl delete crd cloudflarednses.cfgate.io
-kubectl delete crd cloudflareaccessapplications.cfgate.io
-kubectl delete crd cloudflareaccesspolicies.cfgate.io
-```
+## Full decommissioning
+
+Keep the controller, its RBAC, credentials and grants running through cleanup.
+Inventory the resources belonging to this installation and check retention and
+orphan policies before deleting anything.
+
+1. Remove its routes or attachments and confirm tunnel publication has withdrawn
+   their forwarding. Kubernetes deletion alone does not prove remote withdrawal.
+2. Delete its CloudflareDNS and CloudflareAccessApplication objects. Wait for their
+   finalizers while referenced tunnels and policies remain available.
+3. Delete its CloudflareAccessPolicy objects and wait for policy/token cleanup.
+   Then delete its CloudflareTunnel objects and wait for connector drain and remote
+   tunnel cleanup.
+4. Verify remote resources are removed or deliberately retained with an owner
+   handoff. Only then uninstall the chart and remove unused credentials and claims.
+5. Delete CRDs only when no installation still uses them. Deleting a CRD affects
+   every object of that kind in the cluster.
+
+Select explicit names and namespaces. A chart release does not own every cfgate
+object in the cluster. If deletion stalls, inspect conditions, events and logs;
+retain cleanup credentials and grants. Removing finalizers or recovery status
+bypasses cleanup and can leave Cloudflare resources behind.
 
 ## Configuration
 
 ### Controller
 
+The manager requests up to 30 seconds for graceful shutdown. Kubernetes can force
+termination when the Pod allowance expires; a longer allowance does not replace
+recovery after interrupted writes. Credentials stored in Secrets also need to be
+reloaded by their consumers independently.
+
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `replicaCount` | int | `2` | Number of controller replicas |
+| `terminationGracePeriodSeconds` | int | `30` | Pod shutdown allowance; `0` requests immediate termination |
 | `image.repository` | string | `ghcr.io/cfgate/cfgate` | Container image repository |
 | `image.tag` | string | `""` | Explicit tag opts out of the chart's default digest pin |
 | `image.digest` | string | `""` | Explicit SHA-256 digest; takes precedence over tag |

@@ -177,9 +177,13 @@ spec:
                   properties:
                     anyValidServiceToken:
                       description: |-
-                        AnyValidServiceToken matches any valid service token.
+                        AnyValidServiceToken matches any valid service token. When present, it must be true.
+                        Omit the rule to disable it.
                         SDK: AnyValidServiceTokenRule
                       type: boolean
+                      x-kubernetes-validations:
+                      - message: must be true; omit the rule to disable it
+                        rule: self == true
                     country:
                       description: |-
                         Country matches source country codes (ISO 3166-1 alpha-2).
@@ -246,9 +250,13 @@ spec:
                         rule: has(self.id)
                     everyone:
                       description: |-
-                        Everyone matches all users (use with caution).
+                        Everyone matches all users. When present, it must be true.
+                        Omit the rule to disable it.
                         SDK: EveryoneRule
                       type: boolean
+                      x-kubernetes-validations:
+                      - message: must be true; omit the rule to disable it
+                        rule: self == true
                     group:
                       description: |-
                         Group matches a Cloudflare Access Group by ID.
@@ -388,9 +396,13 @@ spec:
                   properties:
                     anyValidServiceToken:
                       description: |-
-                        AnyValidServiceToken matches any valid service token.
+                        AnyValidServiceToken matches any valid service token. When present, it must be true.
+                        Omit the rule to disable it.
                         SDK: AnyValidServiceTokenRule
                       type: boolean
+                      x-kubernetes-validations:
+                      - message: must be true; omit the rule to disable it
+                        rule: self == true
                     country:
                       description: |-
                         Country matches source country codes (ISO 3166-1 alpha-2).
@@ -457,9 +469,13 @@ spec:
                         rule: has(self.id)
                     everyone:
                       description: |-
-                        Everyone matches all users (use with caution).
+                        Everyone matches all users. When present, it must be true.
+                        Omit the rule to disable it.
                         SDK: EveryoneRule
                       type: boolean
+                      x-kubernetes-validations:
+                      - message: must be true; omit the rule to disable it
+                        rule: self == true
                     group:
                       description: |-
                         Group matches a Cloudflare Access Group by ID.
@@ -614,9 +630,13 @@ spec:
                   properties:
                     anyValidServiceToken:
                       description: |-
-                        AnyValidServiceToken matches any valid service token.
+                        AnyValidServiceToken matches any valid service token. When present, it must be true.
+                        Omit the rule to disable it.
                         SDK: AnyValidServiceTokenRule
                       type: boolean
+                      x-kubernetes-validations:
+                      - message: must be true; omit the rule to disable it
+                        rule: self == true
                     country:
                       description: |-
                         Country matches source country codes (ISO 3166-1 alpha-2).
@@ -683,9 +703,13 @@ spec:
                         rule: has(self.id)
                     everyone:
                       description: |-
-                        Everyone matches all users (use with caution).
+                        Everyone matches all users. When present, it must be true.
+                        Omit the rule to disable it.
                         SDK: EveryoneRule
                       type: boolean
+                      x-kubernetes-validations:
+                      - message: must be true; omit the rule to disable it
+                        rule: self == true
                     group:
                       description: |-
                         Group matches a Cloudflare Access Group by ID.
