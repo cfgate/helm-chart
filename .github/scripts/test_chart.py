@@ -10,7 +10,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DIGEST = "sha256:edcccbec17ccec00e235a8d706a112c40ddfa121b1d1fd1e1efc72398e0f9570"
+DIGEST = "sha256:1655fd304fe4e1111eaef92fac743b127fa3fd226bd6e28e352866effe1acaa9"
 
 
 class ChartTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class ChartTests(unittest.TestCase):
         for values, expected in [
             ({}, "ghcr.io/cfgate/cfgate@" + DIGEST),
             ({"image": {"tag": "custom"}}, "ghcr.io/cfgate/cfgate:custom"),
-            ({"image": {"repository": "example.com/operator"}}, "example.com/operator:0.2.0-alpha.7"),
+            ({"image": {"repository": "example.com/operator"}}, "example.com/operator:0.2.0-alpha.8"),
             ({"image": {"repository": "example.com/operator", "tag": "custom"}}, "example.com/operator:custom"),
             ({"image": {"digest": custom, "tag": "ignored"}}, "ghcr.io/cfgate/cfgate@" + custom),
             ({"image": {"repository": "example.com/operator", "digest": custom}}, "example.com/operator@" + custom),

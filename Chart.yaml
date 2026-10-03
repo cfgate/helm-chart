@@ -2,8 +2,8 @@ apiVersion: v2
 name: cfgate
 description: Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access
 type: application
-version: 1.6.0
-appVersion: "0.2.0-alpha.7"
+version: 1.7.0
+appVersion: "0.2.0-alpha.8"
 kubeVersion: ">= 1.26.0-0"
 
 keywords:
@@ -28,7 +28,7 @@ maintainers:
     url: https://github.com/inherent-design
 
 annotations:
-  cfgate.io/operator-image-digest: "sha256:edcccbec17ccec00e235a8d706a112c40ddfa121b1d1fd1e1efc72398e0f9570"
+  cfgate.io/operator-image-digest: "sha256:1655fd304fe4e1111eaef92fac743b127fa3fd226bd6e28e352866effe1acaa9"
   artifacthub.io/license: Apache-2.0
   artifacthub.io/category: networking
   artifacthub.io/operator: "true"
