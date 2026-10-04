@@ -4,7 +4,8 @@ Chart version: {{ .Chart.Version }}
 App version: {{ .Chart.AppVersion }}
 
 Gateway API CRDs are an external prerequisite; this chart does not install them.
-Before upgrading from 1.4.0, complete the ownership/grant migration in README.md.
+Follow the versioned upgrade guidance before changing controller versions:
+https://github.com/cfgate/helm-chart/blob/v{{ .Chart.Version }}/README.md#upgrade
 Preserve the installation namespace and install all four matching CRD schemas
 before the new controller runs, including Access dependency status fields.
 
@@ -16,13 +17,11 @@ CRDs installed:
   - cloudflareaccessapplications.cfgate.io
   - cloudflareaccesspolicies.cfgate.io
 
-Note: CRDs have "helm.sh/resource-policy: keep" annotation and will not be
-deleted when the chart is uninstalled. To remove CRDs manually:
-
-  kubectl delete crd cloudflaretunnels.cfgate.io
-  kubectl delete crd cloudflarednses.cfgate.io
-  kubectl delete crd cloudflareaccessapplications.cfgate.io
-  kubectl delete crd cloudflareaccesspolicies.cfgate.io
+CRDs are retained when the chart is uninstalled. Controller-only removal stops
+reconciliation and cleanup; it does not decommission managed resources.
+For full removal, finalize managed resources while the controller, credentials,
+and permissions remain available, then remove the controller and unused CRDs:
+https://github.com/cfgate/helm-chart/blob/v{{ .Chart.Version }}/README.md#full-decommissioning
 
 {{- end }}
 
