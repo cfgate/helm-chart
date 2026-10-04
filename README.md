@@ -6,7 +6,7 @@
 
 Installs the cfgate controller, a Gateway API-native Kubernetes operator for Cloudflare Tunnel, DNS, and Access management.
 
-Chart `1.9.0` installs cfgate [`0.2.0-alpha.10`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.10).
+Chart `1.10.0` installs cfgate [`0.2.0-alpha.11`](https://github.com/cfgate/cfgate/releases/tag/v0.2.0-alpha.11).
 
 The chart deploys:
 - Controller Deployment (with health probes, security context, resource limits)
@@ -43,11 +43,11 @@ helm upgrade cfgate oci://ghcr.io/cfgate/charts/cfgate \
   --namespace cfgate-system
 ```
 
-### Next controller update (unreleased)
+### Upgrade from 1.9.0 to 1.10.0
 
-The next operator update tightens DNS namespace selection and origin transport
-validation. This branch prepares migration guidance; its chart still selects the
-published alpha.10 image until the next operator release is available.
+This upgrades cfgate `0.2.0-alpha.10` to `0.2.0-alpha.11`. Existing chart values
+and CRD fields remain compatible. Clear or update explicit image overrides to
+select the new chart-owned digest.
 
 - namespace `matchLabels` requires each label to exist, including empty values; add the intended label or use `matchNames` to include a namespace explicitly
 - HTTPS cannot use h2c, and inherited HTTP/2 and h2c cannot both be enabled; disable the inherited transport explicitly when switching
@@ -56,26 +56,11 @@ published alpha.10 image until the next operator release is available.
 
 No new CRD fields, chart settings, or connector image are required. Review the
 actual image overrides and origin settings stored on existing Tunnel resources.
-Keep installation identity and unfinished recovery state through the upgrade.
-
-### Upgrade from 1.8.0 to 1.9.0
-
-This upgrades cfgate `0.2.0-alpha.9` to `0.2.0-alpha.10`. Existing chart values
-and CRD fields remain compatible. Clear or update explicit image overrides to
-select the new chart-owned digest.
-
-- explicit `cfgate.io/origin-ssl-verify: "true"` now overrides an insecure tunnel default; check origin certificates and CA bundles before upgrading
-- origin protocol and documented Boolean aliases are case-insensitive; invalid transport annotations are rejected
-- explicit `origin-http2: "false"` and `origin-h2c: "false"` now disable inherited settings; disable the inherited transport when switching between them
-- origin connect timeouts must represent positive whole seconds, such as `10s` or `1m`
-- omitted route `cfgate.io/ttl` now inherits the DNS resource's default; set `"1"` to keep Auto under a custom default
-- duplicate hostname settings are compared after inheritance and proxied-TTL normalization; genuinely different effective records still conflict
-
 Preserve installation identity and pending recovery state through the upgrade.
 Resolve pending DNS writes and service-token distribution before any rollback.
 For older installations, follow the versioned
-[1.7.0 to 1.8.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.8.0/README.md#upgrade-from-170-to-180)
-first, including selector validation and stored TTL overrides.
+[1.8.0 to 1.9.0 migration notes](https://github.com/cfgate/helm-chart/blob/v1.9.0/README.md#upgrade-from-180-to-190)
+first, including TLS verification overrides and DNS TTL inheritance.
 
 ## Controller removal
 
