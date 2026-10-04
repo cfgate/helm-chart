@@ -17,13 +17,15 @@ CRDs installed:
   - cloudflareaccessapplications.cfgate.io
   - cloudflareaccesspolicies.cfgate.io
 
-CRDs are retained when the chart is uninstalled. Controller-only removal stops
-reconciliation and cleanup; it does not decommission managed resources.
+CRDs are retained when the chart is uninstalled.
+
+{{- end }}
+
+Controller-only removal stops reconciliation and cleanup; it does not
+decommission managed resources.
 For full removal, finalize managed resources while the controller, credentials,
 and permissions remain available, then remove the controller and unused CRDs:
 https://github.com/cfgate/helm-chart/blob/v{{ .Chart.Version }}/README.md#full-decommissioning
-
-{{- end }}
 
 Installation identity defaults to the actual Pod namespace (POD_NAMESPACE).
 Changing its namespace UID or controller.installationNamespace requires migration.
